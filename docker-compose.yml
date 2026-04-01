@@ -1,0 +1,102 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: auto_scheduling_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-auto_scheduling}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+    ports:
+      - "5432:5432"
+    volumes:
+      - auto_scheduling_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d auto_scheduling"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./services/api
+    container_name: auto_scheduling_api
+    restart: unless-stopped
+    env_file:
+      - ./services/api/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:-auto_scheduling}
+      WAIT_FOR_DB_ON_STARTUP: "true"
+      WAIT_FOR_DB_TIMEOUT_SECONDS: "120"
+      WAIT_FOR_DB_POLL_INTERVAL_SECONDS: "2"
+      SNAPSHOT_PREWARM_ON_STARTUP: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  worker:
+    build:
+      context: ./services/api
+    container_name: auto_scheduling_worker
+    restart: unless-stopped
+    command: ["/app/docker/worker-entrypoint.sh"]
+    env_file:
+      - ./services/api/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:-auto_scheduling}
+      WAIT_FOR_DB_ON_STARTUP: "true"
+      WAIT_FOR_DB_TIMEOUT_SECONDS: "120"
+      WAIT_FOR_DB_POLL_INTERVAL_SECONDS: "2"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  scheduler:
+    build:
+      context: ./services/api
+    container_name: auto_scheduling_scheduler
+    restart: unless-stopped
+    command: ["/app/docker/scheduler-entrypoint.sh"]
+    env_file:
+      - ./services/api/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:-auto_scheduling}
+      WAIT_FOR_DB_ON_STARTUP: "true"
+      WAIT_FOR_DB_TIMEOUT_SECONDS: "120"
+      WAIT_FOR_DB_POLL_INTERVAL_SECONDS: "2"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./apps/web
+      args:
+        VITE_API_BASE_URL: /api
+    container_name: auto_scheduling_frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+      worker:
+        condition: service_started
+      scheduler:
+        condition: service_started
+    ports:
+      - "5173:80"
+
+volumes:
+  auto_scheduling_postgres_data:

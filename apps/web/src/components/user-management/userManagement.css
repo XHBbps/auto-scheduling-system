@@ -1,0 +1,161 @@
+.panel-block {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 22px;
+  padding: 20px;
+}
+
+.panel-title {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.user-action-strip {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.dialog-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.detail-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.detail-card {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 22px;
+  padding: 20px;
+}
+
+.detail-card__title {
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.detail-card__desc {
+  margin-top: 8px;
+  color: #7a848b;
+  font-size: 13px;
+}
+
+.detail-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.detail-item {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.detail-item__label {
+  color: #7a848b;
+  font-size: 12px;
+}
+
+.detail-item__value {
+  margin-top: 8px;
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+
+.user-tabs .el-tabs__header {
+  margin: 0;
+}
+
+.user-tabs .el-tabs__nav-wrap::after {
+  display: none;
+}
+
+.user-tabs .el-tabs__item {
+  color: #7a848b;
+}
+
+.user-tabs .el-tabs__item.is-active {
+  color: #82d695;
+}
+
+.user-tabs .el-tabs__active-bar {
+  background-color: #82d695;
+}
+
+.user-management-dialog .el-input__wrapper,
+.user-management-dialog .el-select__wrapper,
+.user-management-dialog .el-textarea__inner {
+  background: #171918 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: none !important;
+  color: #ffffff !important;
+}
+
+.user-management-dialog .el-input__wrapper:hover,
+.user-management-dialog .el-select__wrapper:hover,
+.user-management-dialog .el-textarea__inner:hover {
+  border-color: rgba(130, 214, 149, 0.32) !important;
+}
+
+.user-management-dialog .el-input__wrapper.is-focus,
+.user-management-dialog .el-select__wrapper.is-focus,
+.user-management-dialog .el-textarea__inner:focus {
+  border-color: #82d695 !important;
+  box-shadow: 0 0 0 1px rgba(130, 214, 149, 0.28) !important;
+}
+
+.user-management-dialog .el-input__inner,
+.user-management-dialog .el-textarea__inner,
+.user-management-dialog .el-select__placeholder,
+.user-management-dialog .el-input__count,
+.user-management-dialog .el-input__count-inner {
+  color: #ffffff !important;
+  background: transparent !important;
+}
+
+.user-management-dialog .el-input__inner::placeholder,
+.user-management-dialog .el-textarea__inner::placeholder {
+  color: #7a848b !important;
+}
+
+.user-management-dialog .el-input.is-disabled .el-input__wrapper,
+.user-management-dialog .el-textarea.is-disabled .el-textarea__inner,
+.user-management-dialog .el-select.is-disabled .el-select__wrapper {
+  background: #141615 !important;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+  color: #7a848b !important;
+}
+
+.user-management-dialog input:-webkit-autofill,
+.user-management-dialog input:-webkit-autofill:hover,
+.user-management-dialog input:-webkit-autofill:focus,
+.user-management-dialog textarea:-webkit-autofill,
+.user-management-dialog textarea:-webkit-autofill:hover,
+.user-management-dialog textarea:-webkit-autofill:focus {
+  -webkit-text-fill-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0 1000px #171918 inset !important;
+  transition: background-color 9999s ease-out 0s;
+}
+
+@media (max-width: 900px) {
+  .dialog-grid,
+  .detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

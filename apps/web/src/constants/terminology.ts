@@ -1,0 +1,18 @@
+export const BUSINESS_TERMS = {
+  contractNo: '合同号',
+  salesOrderNo: '销售订单',
+  confirmedDeliveryDate: '确认交货期',
+  plannedStartDate: '计划开工',
+  plannedEndDate: '计划完工',
+  syncTime: '同步时间',
+  latestUpdatedAt: '最近更新',
+  drawingReleased: '图纸下发',
+  drawingReleasedYes: '已下发',
+  drawingReleasedNo: '未下发',
+  issueManagement: '异常管理',
+  issueType: '异常类型',
+  issueTitle: '异常标题',
+  issueDetail: '异常详情',
+  issueLevel: '异常级别',
+  completedWithWarnings: '完成但有异常',
+} as const

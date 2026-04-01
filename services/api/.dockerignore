@@ -1,0 +1,16 @@
+.git
+.gitignore
+.pytest_cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.python-version
+.venv
+venv
+node_modules
+dist
+build
+htmlcov
+tests
+docs
