@@ -1,5 +1,7 @@
 # 自动排产系统（Auto Scheduling System）
 
+[![CI](https://github.com/XHBbps/auto-scheduling-system/actions/workflows/ci.yml/badge.svg)](https://github.com/XHBbps/auto-scheduling-system/actions/workflows/ci.yml)
+
 面向制造企业的生产排产管理平台，通过对接 SAP BOM、观远 BI 销售计划、飞书生产订单等外部数据源，自动计算整机与零件排产结果，并提供可视化看板、异常预警和数据导出能力。
 
 ---

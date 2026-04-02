@@ -9,6 +9,8 @@ from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import APIKeyCookie
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.common.datetime_utils import utc_now
+
 from app.config import settings
 from app.database import get_session
 from app.repository.user_session_repo import UserSessionRepo
@@ -54,7 +56,6 @@ class CurrentUserIdentity:
         return self.is_admin or normalized in self.permission_codes
 
 
-from app.common.datetime_utils import utc_now as utc_now  # re-export for backward compat
 
 
 def ensure_utc_datetime(value: datetime | None) -> datetime | None:

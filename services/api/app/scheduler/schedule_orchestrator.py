@@ -405,12 +405,12 @@ class ScheduleOrchestrator:
                     failed += 1
                 results.append(result)
             except Exception as exc:
-                logger.error("Scheduling failed for order %s: %s", order_line_id, exc)
+                logger.error("Scheduling failed for order %s: %s", order_line_id, exc, exc_info=True)
                 failed += 1
                 results.append({
                     "success": False,
                     "order_line_id": order_line_id,
-                    "reason": str(exc),
+                    "reason": "排产执行异常，请查看系统日志",
                 })
 
         return {

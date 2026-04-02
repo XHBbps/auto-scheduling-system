@@ -87,7 +87,7 @@ const dashboardModeModel = computed({
 <style scoped>
 .dashboard-header {
   position: relative;
-  border-radius: 18px;
+  border-radius: 16px;
   background: #1a1d1c;
 }
 

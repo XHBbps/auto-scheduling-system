@@ -1,1 +1,6 @@
 .env
+.env.*
+!.env.example
+.tmp_*
+__pycache__/
+*.pyc

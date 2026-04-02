@@ -25,6 +25,7 @@ services:
     env_file:
       - ./services/api/.env
     environment:
+      TZ: Asia/Shanghai
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:-auto_scheduling}
       WAIT_FOR_DB_ON_STARTUP: "true"
       WAIT_FOR_DB_TIMEOUT_SECONDS: "120"
@@ -56,6 +57,7 @@ services:
     env_file:
       - ./services/api/.env
     environment:
+      TZ: Asia/Shanghai
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:-auto_scheduling}
       WAIT_FOR_DB_ON_STARTUP: "true"
       WAIT_FOR_DB_TIMEOUT_SECONDS: "120"
@@ -73,6 +75,7 @@ services:
     env_file:
       - ./services/api/.env
     environment:
+      TZ: Asia/Shanghai
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:-auto_scheduling}
       WAIT_FOR_DB_ON_STARTUP: "true"
       WAIT_FOR_DB_TIMEOUT_SECONDS: "120"

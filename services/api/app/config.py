@@ -80,6 +80,13 @@ class Settings(BaseSettings):
     schedule_snapshot_reconcile_hour: int = 8
     schedule_snapshot_reconcile_minute: int = 0
 
+    trusted_proxy_cidrs: list[str] = [
+        "127.0.0.1",
+        "10.0.0.0/8",
+        "172.16.0.0/12",
+        "192.168.0.0/16",
+    ]
+
     cors_allowed_origins: list[str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",

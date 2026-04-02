@@ -1,0 +1,65 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - production
+
+concurrency:
+  group: deploy-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-push:
+    name: Build & Push Images
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set image tag
+        id: tag
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          echo "tag=${{ github.event.inputs.environment }}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "latest_tag=${{ github.event.inputs.environment }}-latest" >> "$GITHUB_OUTPUT"
+
+      - name: Build & push backend
+        run: |
+          IMAGE=ghcr.io/${{ github.repository }}/backend
+          docker build -t $IMAGE:${{ steps.tag.outputs.tag }} -t $IMAGE:${{ steps.tag.outputs.latest_tag }} ./services/api
+          docker push $IMAGE:${{ steps.tag.outputs.tag }}
+          docker push $IMAGE:${{ steps.tag.outputs.latest_tag }}
+
+      - name: Build & push frontend
+        run: |
+          IMAGE=ghcr.io/${{ github.repository }}/frontend
+          docker build -t $IMAGE:${{ steps.tag.outputs.tag }} -t $IMAGE:${{ steps.tag.outputs.latest_tag }} ./apps/web
+          docker push $IMAGE:${{ steps.tag.outputs.tag }}
+          docker push $IMAGE:${{ steps.tag.outputs.latest_tag }}
+
+      - name: Summary
+        run: |
+          echo "## Deploy Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tag**: ${{ steps.tag.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend**: ghcr.io/${{ github.repository }}/backend:${{ steps.tag.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend**: ghcr.io/${{ github.repository }}/frontend:${{ steps.tag.outputs.tag }}" >> $GITHUB_STEP_SUMMARY

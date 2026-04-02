@@ -27,7 +27,6 @@ def _build_content_disposition(filename: str) -> str:
 )
 async def export_machine_schedules(
     export_format: str = Query("xlsx", pattern="^(xlsx|csv)$", description="导出文件格式；xlsx 为 Excel，csv 为文本格式。"),
-    max_rows: int = Query(50000, ge=1, le=100000, description="导出最大行数上限"),
     order_line_id: Optional[int] = None,
     contract_no: Optional[str] = None,
     customer_name: Optional[str] = None,
@@ -84,7 +83,6 @@ async def export_machine_schedules(
 )
 async def export_part_schedules(
     export_format: str = Query("xlsx", pattern="^(xlsx|csv)$", description="导出文件格式；xlsx 为 Excel，csv 为文本格式。"),
-    max_rows: int = Query(50000, ge=1, le=100000, description="导出最大行数上限"),
     order_line_id: Optional[int] = None,
     contract_no: Optional[str] = None,
     customer_name: Optional[str] = None,

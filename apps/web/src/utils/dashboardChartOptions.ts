@@ -58,6 +58,8 @@ export interface LineChartOptions {
 interface DonutMouseEventParams {
   componentType?: string
   seriesType?: string
+  seriesIndex?: number
+  dataIndex?: number
   name?: string
   value?: string | number | Date | Record<string, unknown> | unknown[] | null
 }
@@ -92,7 +94,13 @@ const getReusableChart = (
   return init(element)
 }
 
-const buildDonutCenterLabel = (label?: string) => label || ''
+const buildDonutCenterLabel = (label?: string) => {
+  if (!label) return ''
+  const parts = label.split('\n')
+  if (parts.length < 2) return label
+  // 第一行数值用粗体大号，第二行说明用细体小号
+  return `{value|${parts[0]}}\n{desc|${parts[1]}}`
+}
 
 const pickChartColors = (colors: Array<string | undefined>) => colors.filter((color): color is string => Boolean(color))
 
@@ -107,6 +115,10 @@ const buildDonutChartOption = ({
   tooltip: {
     ...DEFAULT_TOOLTIP,
     trigger: 'item',
+    formatter: (params: any) => {
+      if (!params?.name || !params?.percent) return ''
+      return `${params.marker} ${params.name}：${params.value} 单（${params.percent}%）`
+    },
   },
   legend: showLegend
     ? {
@@ -133,11 +145,22 @@ const buildDonutChartOption = ({
         show: Boolean(centerLabel),
         position: 'center',
         formatter: buildDonutCenterLabel(centerLabel),
-        color: '#ffffff',
-        fontSize: 14,
-        fontWeight: 700,
-        lineHeight: 19,
-        align: 'center',
+        rich: {
+          value: {
+            color: '#ffffff',
+            fontSize: 18,
+            fontWeight: 700,
+            lineHeight: 24,
+            align: 'center',
+          },
+          desc: {
+            color: '#8f9ca4',
+            fontSize: 12,
+            fontWeight: 400,
+            lineHeight: 18,
+            align: 'center',
+          },
+        },
       },
       emphasis: {
         scale: true,
@@ -168,9 +191,35 @@ const updateDonutCenterLabel = (chart: DashboardChartInstance, label?: string) =
   )
 }
 
+const isMouseOnRing = (
+  chart: DashboardChartInstance,
+  event: DonutMouseEventParams,
+  innerRadiusPct: number,
+  outerRadiusPct: number,
+  centerPct: [number, number],
+): boolean => {
+  const nativeEvent = (event as any).event?.event as MouseEvent | undefined
+  if (!nativeEvent) return true // fallback: allow
+  const dom = chart.getDom()
+  if (!dom) return true
+  const rect = dom.getBoundingClientRect()
+  const refSize = Math.min(rect.width, rect.height)
+  const cx = rect.width * centerPct[0]
+  const cy = rect.height * centerPct[1]
+  const mx = nativeEvent.clientX - rect.left
+  const my = nativeEvent.clientY - rect.top
+  const dist = Math.sqrt((mx - cx) ** 2 + (my - cy) ** 2)
+  const innerPx = (refSize * innerRadiusPct) / 2
+  const outerPx = (refSize * outerRadiusPct) / 2
+  return dist >= innerPx && dist <= outerPx
+}
+
 const bindDonutCenterLabelInteractions = (
   chart: DashboardChartInstance,
   defaultCenterLabel?: string,
+  innerRadius = 0.58,
+  outerRadius = 0.76,
+  center: [number, number] = [0.5, 0.42],
 ) => {
   const restoreDefaultLabel = () => {
     updateDonutCenterLabel(chart, defaultCenterLabel)
@@ -181,17 +230,22 @@ const bindDonutCenterLabelInteractions = (
   chart.off('globalout')
 
   chart.on('mouseover', (params: DonutMouseEventParams) => {
-    if (params.componentType !== 'series' || params.seriesType !== 'pie') return
-    const hoveredLabel = `${params.name || '-'}\n${params.value ?? '-'}`
+    if (params.componentType !== 'series' || params.seriesType !== 'pie' || params.dataIndex === undefined) return
+    if (!isMouseOnRing(chart, params, innerRadius, outerRadius, center)) return
+    const hoveredLabel = `${params.value ?? '-'}\n${params.name || '-'}`
     updateDonutCenterLabel(chart, hoveredLabel)
   })
 
   chart.on('mouseout', (params: DonutMouseEventParams) => {
-    if (params.componentType !== 'series' || params.seriesType !== 'pie') return
+    if (params.componentType !== 'series' || params.seriesType !== 'pie' || params.dataIndex === undefined) return
     restoreDefaultLabel()
   })
 
   chart.on('globalout', restoreDefaultLabel)
+
+  chart.on('legendselectchanged', () => {
+    restoreDefaultLabel()
+  })
 }
 
 const buildVerticalBarChartOption = ({ categories, series, dualAxis }: BarChartOptions) => {
@@ -204,6 +258,17 @@ const buildVerticalBarChartOption = ({ categories, series, dualAxis }: BarChartO
       ...DEFAULT_TOOLTIP,
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
+      formatter: isDual
+        ? (params: Array<{ marker: string; seriesName: string; value: number; axisValue: string }>) => {
+            if (!Array.isArray(params) || !params.length) return ''
+            let html = `<div style="font-weight:600;margin-bottom:6px">${params[0].axisValue}</div>`
+            params.forEach((p) => {
+              const unit = p.seriesName.includes('金额') ? ' 万元' : ' 单'
+              html += `<div>${p.marker} ${p.seriesName}：${p.value}${unit}</div>`
+            })
+            return html
+          }
+        : undefined,
     },
     legend: series.length > 1
       ? {
@@ -320,15 +385,17 @@ const buildLineChartOption = ({ categories, series, smooth = true, showArea = fa
     ...DEFAULT_TOOLTIP,
     trigger: 'axis',
   },
-  legend: {
-    top: 0,
-    left: 0,
-    icon: 'roundRect',
-    itemWidth: 8,
-    itemHeight: 8,
-    textStyle: { color: '#8f9ca4', fontSize: 12 },
-  },
-  grid: DEFAULT_GRID,
+  legend: series.length > 1
+    ? {
+        top: 0,
+        left: 0,
+        icon: 'roundRect',
+        itemWidth: 8,
+        itemHeight: 8,
+        textStyle: { color: '#8f9ca4', fontSize: 12 },
+      }
+    : undefined,
+  grid: series.length > 1 ? DEFAULT_GRID : { ...DEFAULT_GRID, top: '8%' },
   xAxis: {
     type: 'category',
     data: categories,

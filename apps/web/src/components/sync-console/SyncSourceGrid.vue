@@ -1,10 +1,10 @@
 ﻿<template>
-  <el-row :gutter="24">
-    <el-col v-for="source in props.syncSources" :key="source.title" :span="12" class="mb-6">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div v-for="source in props.syncSources" :key="source.title">
       <div class="sync-source-card tech-card p-6 h-full hover:border-brand/50 transition-colors duration-300 group">
         <div class="sync-source-card__body">
           <div class="sync-source-card__icon bg-surface-raised">
-            <el-icon size="24" class="text-[#82d695]">
+            <el-icon size="24" class="text-brand">
               <component :is="source.icon" />
             </el-icon>
           </div>
@@ -15,12 +15,12 @@
               <AppStatusBadge v-bind="props.getSyncViewStatusBadgeMeta(getSyncState(source.key).status)" />
             </div>
 
-            <div class="text-[#717a82] text-sm leading-relaxed">{{ source.desc }}</div>
+            <div class="text-text-muted text-sm leading-relaxed">{{ source.desc }}</div>
             <div v-if="props.getSyncStateDescription(source.key)" class="mt-2 text-xs text-text-muted">
               {{ props.getSyncStateDescription(source.key) }}
             </div>
 
-            <div v-if="getSyncState(source.key).jobId" class="text-xs text-[#717a82] mt-3">
+            <div v-if="getSyncState(source.key).jobId" class="text-xs text-text-muted mt-3">
               任务 ID：{{ getSyncState(source.key).jobId }}
             </div>
 
@@ -37,7 +37,7 @@
                 class="mt-1"
                 :class="{
                   'text-status-danger': getSyncState(source.key).status === 'error',
-                  'text-[#e6a23c]': ['queued', 'running'].includes(getSyncState(source.key).status),
+                  'text-status-warning': ['queued', 'running'].includes(getSyncState(source.key).status),
                   'text-brand': !['error', 'queued', 'running'].includes(getSyncState(source.key).status),
                 }"
               >
@@ -81,8 +81,8 @@
           </div>
         </div>
       </div>
-    </el-col>
-  </el-row>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">

@@ -39,6 +39,7 @@ import request from '../utils/httpClient'
 import type { PaginatedResponse, IssueItem } from '../types/apiModels'
 import { AUTH_CHANGED_EVENT_NAME, getAuthSessionState } from '../utils/authSession'
 import { hasPermissionCode } from '../utils/accessControl'
+import { showStructuredConfirmDialog } from '../utils/confirmDialog'
 
 const router = useRouter()
 const route = useRoute()
@@ -127,6 +128,19 @@ const fetchIssueTypeOptions = async () => {
 const handleAction = async (id: number, action: 'resolve' | 'ignore') => {
   if (!canManageIssues.value) {
     ElMessage.error('当前账号无处理异常权限')
+    return
+  }
+
+  const actionLabel = action === 'resolve' ? '处理' : '忽略'
+  try {
+    await showStructuredConfirmDialog({
+      title: `确认${actionLabel}异常`,
+      headline: `确认${actionLabel}该异常记录？`,
+      description: action === 'ignore' ? '忽略后该异常将不再展示，此操作不可撤销。' : '处理后该异常将标记为已解决。',
+      confirmButtonText: `确认${actionLabel}`,
+      type: 'warning',
+    })
+  } catch {
     return
   }
 

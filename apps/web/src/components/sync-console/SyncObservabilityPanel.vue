@@ -3,12 +3,12 @@
     <div class="flex items-center justify-between mb-4">
       <div>
         <div class="text-white text-lg font-semibold">同步巡检概览</div>
-        <div class="text-[#717a82] text-sm mt-1">聚合同步任务、快照与 BOM 补数队列的关键指标。</div>
+        <div class="text-text-muted text-sm mt-1">聚合同步任务、快照与 BOM 补数队列的关键指标。</div>
         <div class="text-xs text-text-muted mt-2">最近刷新：{{ props.observabilityLastUpdatedAt }}</div>
       </div>
       <el-button
         plain
-        class="!bg-transparent !border-[#2a2e2d] !text-[#a0aab2] hover:!text-brand hover:!border-brand"
+        class="!bg-transparent !border-border !text-text-secondary hover:!text-brand hover:!border-brand"
         :loading="props.observabilityLoading"
         @click="props.onLoadSyncObservability"
       >
@@ -20,9 +20,9 @@
       <div
         v-for="metric in props.observabilityMetrics"
         :key="metric.label"
-        class="rounded-xl border border-[#2a2e2d] bg-[#121413] p-4"
+        class="rounded-2xl border border-border bg-surface-page p-4"
       >
-        <div class="text-[11px] tracking-widest text-[#717a82] mb-2">{{ metric.label }}</div>
+        <div class="text-[11px] tracking-widest text-text-muted mb-2">{{ metric.label }}</div>
         <div class="text-2xl font-semibold font-mono-num" :class="metric.emphasis">{{ metric.value }}</div>
       </div>
     </div>
@@ -31,9 +31,9 @@
       <div
         v-for="metric in props.queueMetrics"
         :key="metric.label"
-        class="rounded-xl border border-[#2a2e2d] bg-[#121413] p-4"
+        class="rounded-2xl border border-border bg-surface-page p-4"
       >
-        <div class="text-[11px] tracking-widest text-[#717a82] mb-2">{{ metric.label }}</div>
+        <div class="text-[11px] tracking-widest text-text-muted mb-2">{{ metric.label }}</div>
         <div class="text-2xl font-semibold font-mono-num" :class="metric.emphasis">{{ metric.value }}</div>
       </div>
     </div>
@@ -42,10 +42,10 @@
       <div
         v-for="card in props.observabilityJobCards"
         :key="card.title"
-        class="rounded-xl border border-[#2a2e2d] bg-[#121413] p-4"
+        class="rounded-2xl border border-border bg-surface-page p-4"
       >
         <div class="flex items-center justify-between gap-3 mb-3">
-          <div class="text-sm font-medium text-[#a0aab2]">{{ card.title }}</div>
+          <div class="text-sm font-medium text-text-secondary">{{ card.title }}</div>
           <AppStatusBadge
             v-if="card.job"
             v-bind="props.getSyncViewStatusBadgeMeta(props.jobViewStatus(card.job))"
@@ -53,7 +53,7 @@
         </div>
 
         <template v-if="card.job">
-          <div class="text-xs text-[#717a82] mb-2">
+          <div class="text-xs text-text-muted mb-2">
             开始时间：{{ props.formatRunTime(card.job.start_time) }}
             <span v-if="card.job.end_time"> · 结束时间：{{ props.formatRunTime(card.job.end_time) }}</span>
           </div>
@@ -71,18 +71,18 @@
               {{ item }}
             </el-tag>
           </div>
-          <div class="rounded-lg border border-[#2a2e2d] bg-[#161918] px-3 py-2">
-            <div class="text-[11px] tracking-widest text-[#717a82] mb-1">执行说明</div>
+          <div class="rounded-2xl border border-border bg-surface-page px-3 py-2">
+            <div class="text-[11px] tracking-widest text-text-muted mb-1">执行说明</div>
             <div class="text-xs text-text-secondary leading-6">{{ card.job.message || '暂无结果说明' }}</div>
           </div>
         </template>
-        <div v-else class="text-sm text-[#717a82] py-6">暂无任务记录</div>
+        <div v-else class="text-sm text-text-muted py-6">暂无任务记录</div>
       </div>
     </div>
 
     <div class="mt-6 grid grid-cols-1 xl:grid-cols-2 gap-4">
-      <div class="rounded-xl border border-[#2a2e2d] bg-[#121413] p-4">
-        <div class="text-sm font-medium text-[#a0aab2] mb-3">失败类型分布</div>
+      <div class="rounded-2xl border border-border bg-surface-page p-4">
+        <div class="text-sm font-medium text-text-secondary mb-3">失败类型分布</div>
         <div class="flex flex-wrap gap-2">
           <el-tag
             v-for="(count, key) in props.syncObservability.bom_backfill_queue.failure_kind_counts"
@@ -95,17 +95,17 @@
           </el-tag>
           <div
             v-if="!Object.keys(props.syncObservability.bom_backfill_queue.failure_kind_counts || {}).length"
-            class="text-sm text-[#717a82]"
+            class="text-sm text-text-muted"
           >
             暂无失败类型数据
           </div>
         </div>
       </div>
 
-      <div class="rounded-xl border border-[#2a2e2d] bg-[#121413] p-4">
+      <div class="rounded-2xl border border-border bg-surface-page p-4">
         <div class="flex items-center justify-between gap-3 mb-3">
           <div>
-            <div class="text-sm font-medium text-[#a0aab2]">最近失败 / 待重试物料</div>
+            <div class="text-sm font-medium text-text-secondary">最近失败 / 待重试物料</div>
             <div class="text-xs text-text-muted mt-1">失败记录可直接重试；待重试记录会展示下一次自动重试时间。</div>
           </div>
         </div>
@@ -116,13 +116,13 @@
           <div
             v-for="item in props.syncObservability.bom_backfill_queue.latest_failed_items"
             :key="item.id"
-            class="rounded-lg border border-[#2a2e2d] bg-surface-page p-3"
+            class="rounded-2xl border border-border bg-surface-page p-3"
           >
             <div class="flex items-center justify-between gap-3 mb-2">
               <div class="text-sm text-white font-mono-num">{{ item.material_no }} / {{ item.plant }}</div>
               <AppStatusBadge v-bind="getQueueStatusBadgeMeta(item.status)" />
             </div>
-            <div class="text-xs text-[#717a82] mb-1">
+            <div class="text-xs text-text-muted mb-1">
               {{ props.failureKindLabelMap[item.failure_kind || ''] || item.failure_kind || '未知类型' }}
               · 失败 {{ item.fail_count }} 次
             </div>
@@ -133,7 +133,7 @@
                 v-if="props.canRetryBomBackfillItem(item)"
                 size="small"
                 plain
-                class="!border-[#2a2e2d] !text-[#a0aab2] hover:!text-brand hover:!border-brand"
+                class="!border-border !text-text-secondary hover:!text-brand hover:!border-brand"
                 :loading="Boolean(props.queueRetryingState[item.id])"
                 @click="props.onRetryBomBackfillItem(item)"
               >
@@ -142,7 +142,7 @@
             </div>
           </div>
         </div>
-        <div v-else class="text-sm text-[#717a82] py-6">暂无失败记录</div>
+        <div v-else class="text-sm text-text-muted py-6">暂无失败记录</div>
       </div>
     </div>
   </div>

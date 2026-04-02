@@ -15,9 +15,12 @@ const beijingFormatter = new Intl.DateTimeFormat('zh-CN', {
  * 格式化为北京时间的 YYYY-MM-DD HH:mm:ss 格式。
  * 后端返回的时间戳为 UTC，此函数统一转换为北京时间展示。
  */
-const formatToBejingParts = (dateStr: string): string | null => {
-  // 后端返回的无 Z 后缀的 ISO 字符串视为 UTC
-  const normalized = dateStr.includes('T') && !dateStr.endsWith('Z') ? `${dateStr}Z` : dateStr
+const formatToBeijingParts = (dateStr: string): string | null => {
+  // 已带时区偏移（如 +08:00）或 Z 后缀的直接解析；无后缀的视为 UTC 附加 Z
+  let normalized = dateStr
+  if (dateStr.includes('T') && !dateStr.endsWith('Z') && !/[+-]\d{2}:\d{2}$/.test(dateStr)) {
+    normalized = `${dateStr}Z`
+  }
   const date = new Date(normalized)
   if (Number.isNaN(date.getTime())) return null
   // Intl output: "2026/04/01 11:00:00" → reformat to "2026-04-01 11:00:00"
@@ -36,25 +39,17 @@ export const formatDate = (dateStr?: string | null): string => {
 }
 
 /**
- * 时间戳格式化：UTC → 北京时间，展示为 YYYY-MM-DD HH:mm。
- * 用于 created_at、updated_at、sync_time 等时间戳字段。
+ * 时间戳格式化：转为北京时间，展示为 YYYY-MM-DD HH:mm:ss。
+ * 支持 UTC naive、带 Z 后缀、带时区偏移（如 +08:00）的输入。
  */
 export const formatDateTime = (dateStr?: string | null): string => {
   if (!dateStr) return '-'
-  const result = formatToBejingParts(dateStr)
-  if (!result) return dateStr.replace('T', ' ').substring(0, 16)
-  // 截取到分钟：YYYY-MM-DD HH:mm
-  return result.substring(0, 16)
-}
-
-/**
- * 时间戳格式化（含秒）：UTC → 北京时间，展示为 YYYY-MM-DD HH:mm:ss。
- */
-export const formatDateTimeFull = (dateStr?: string | null): string => {
-  if (!dateStr) return '-'
-  const result = formatToBejingParts(dateStr)
+  const result = formatToBeijingParts(dateStr)
   return result ?? dateStr.replace('T', ' ').substring(0, 19)
 }
+
+// formatDateTimeFull 与 formatDateTime 统一为含秒格式
+export const formatDateTimeFull = formatDateTime
 
 /**
  * 排产状态颜色映射

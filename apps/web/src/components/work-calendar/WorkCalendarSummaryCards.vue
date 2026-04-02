@@ -70,12 +70,10 @@ defineProps({
 
 <style scoped>
 .summary-card {
-  border-radius: 18px;
+  border-radius: 16px;
   border: 1px solid #2a2e2d;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.015) 100%),
-    rgba(255, 255, 255, 0.02);
-  padding: 18px 20px;
+  background: #1a1d1c;
+  padding: 24px;
 }
 
 .summary-card__header {

@@ -1,7 +1,7 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import and_, desc, select
+from sqlalchemy import and_, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.auth import CurrentUserIdentity, require_permission
@@ -46,8 +46,6 @@ async def list_sync_logs(
         count_conditions.append(SyncJobLog.status == status)
     if count_conditions:
         stmt = stmt.where(and_(*count_conditions))
-
-    from sqlalchemy import func
 
     count_stmt = select(func.count()).select_from(SyncJobLog)
     if count_conditions:

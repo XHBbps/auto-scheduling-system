@@ -46,7 +46,7 @@ defineProps({
 
 .dashboard-kpi-card {
   grid-column: span 3 / span 3;
-  padding: 20px;
+  padding: 24px;
   min-height: 168px;
   background: #1a1d1c;
 }

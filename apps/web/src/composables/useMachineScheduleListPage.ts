@@ -342,6 +342,7 @@ export const useMachineScheduleListPage = () => {
   }
 
   const handleRunPartSchedule = async (row: MachineScheduleItem) => {
+    if (partScheduleLoading.value[row.order_line_id]) return
     if (!(await ensureAuthSession({ forceRefresh: true, requiredPermissions: ['schedule.manage'] }))) {
       const authState = getAuthSessionState()
       if (!authState.authenticated) {

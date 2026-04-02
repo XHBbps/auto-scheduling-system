@@ -24,7 +24,36 @@ from app.repository.user_session_repo import UserSessionRepo
 from app.schemas.auth_schemas import AuthLoginRequest, AuthSessionInfoResponse
 from app.services.user_auth_service import serialize_user_payload, verify_password
 
-limiter = Limiter(key_func=get_remote_address)
+import ipaddress
+
+_trusted_networks: list[ipaddress.IPv4Network | ipaddress.IPv6Network] = []
+for cidr in settings.trusted_proxy_cidrs:
+    try:
+        _trusted_networks.append(ipaddress.ip_network(cidr, strict=False))
+    except ValueError:
+        pass
+
+
+def _is_trusted_proxy(ip: str) -> bool:
+    """Check if the direct client IP belongs to a trusted proxy network."""
+    try:
+        addr = ipaddress.ip_address(ip)
+        return any(addr in net for net in _trusted_networks)
+    except ValueError:
+        return False
+
+
+def _get_real_ip(request):
+    """Extract real client IP. Only trust proxy headers from known proxy networks."""
+    direct_ip = get_remote_address(request) or "127.0.0.1"
+    if not _is_trusted_proxy(direct_ip):
+        return direct_ip
+    forwarded = request.headers.get("X-Real-IP") or request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return direct_ip
+
+limiter = Limiter(key_func=_get_real_ip)
 router = APIRouter(prefix="/api/auth", tags=["用户认证"])
 
 

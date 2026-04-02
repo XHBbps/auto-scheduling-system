@@ -2,6 +2,7 @@ import { computed, onMounted, onUnmounted, reactive, ref, type Component } from 
 import { ElMessage } from 'element-plus'
 import { Box, DocumentCopy, ShoppingCart, TrendCharts } from '@element-plus/icons-vue'
 import request from '../utils/httpClient'
+import { formatDateTime } from '../utils/format'
 import { showStructuredConfirmDialog } from '../utils/confirmDialog'
 import { getSchedulerStateBadgeMeta } from '../utils/statusPresentation'
 import type {
@@ -215,31 +216,15 @@ export const useSyncConsolePage = () => {
 
   const formatRunTime = (value?: string | null) => {
     if (!value) return '暂无计划时间'
-    // 后端返回 UTC 时间，统一转换为北京时间展示
-    const normalized = value.includes('T') && !value.endsWith('Z') ? `${value}Z` : value
-    const date = new Date(normalized)
-    if (Number.isNaN(date.getTime())) return value
-    return date.toLocaleString('zh-CN', {
-      timeZone: 'Asia/Shanghai',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
+    // 统一使用 format.ts 的北京时间格式化（YYYY-MM-DD HH:mm:ss，无偏移量）
+    const result = formatDateTime(value)
+    return result === '-' ? value : result
   }
 
-  const markRefreshedAt = () =>
-    new Date().toLocaleString('zh-CN', {
-      timeZone: 'Asia/Shanghai',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-    })
+  const markRefreshedAt = () => {
+    const now = new Date()
+    return formatDateTime(now.toISOString())
+  }
 
   const formatJobProgress = (job?: SyncLogItem | null) => {
     const progress = job?.progress
@@ -375,13 +360,16 @@ export const useSyncConsolePage = () => {
     }
   }
 
-  const clearPollTimer = (key: SyncSourceKey) => {
+  const cancelPollTimer = (key: SyncSourceKey) => {
     const timer = pollTimers.get(key)
     if (timer) {
       window.clearTimeout(timer)
       pollTimers.delete(key)
     }
-    // Bump generation to cancel any in-flight poll chain for this key
+  }
+
+  const clearPollTimer = (key: SyncSourceKey) => {
+    cancelPollTimer(key)
     pollGeneration.set(key, (pollGeneration.get(key) ?? 0) + 1)
   }
 
@@ -418,9 +406,7 @@ export const useSyncConsolePage = () => {
       applyJobResult(key, log)
 
       if (log.status === 'running') {
-        clearPollTimer(key)
-        // Restore our generation since clearPollTimer bumped it
-        pollGeneration.set(key, gen)
+        cancelPollTimer(key)
         pollTimers.set(key, window.setTimeout(() => void pollJobStatus(key, jobId, gen), JOB_POLL_INTERVAL_MS))
         return
       }
@@ -543,6 +529,11 @@ export const useSyncConsolePage = () => {
   }
 
   const handleSync = async (source: SyncSource) => {
+    if (source.key === 'bom' && (!bomForm.value.material_no || !bomForm.value.plant)) {
+      ElMessage.warning('请输入物料号和工厂后再执行 BOM 同步')
+      return
+    }
+
     try {
       await showStructuredConfirmDialog({
         title: '同步确认',

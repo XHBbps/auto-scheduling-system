@@ -1,4 +1,4 @@
-import { computed, nextTick, onMounted, onUnmounted, ref, watch, type Component } from 'vue'
+import { computed, nextTick, onActivated, onDeactivated, onMounted, onUnmounted, ref, watch, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   Box,
@@ -421,7 +421,7 @@ export const useScheduleDashboardPage = () => {
           tone: 'primary',
           icon: PieChart,
           span: 4,
-          hasData: statusChartData.value.length > 0,
+          hasData: statusChartData.value.some((item) => item.value > 0),
           emptyText: '暂无整机状态分布',
           stats: [
             { label: '总订单', value: String(overview.machine_summary.total_orders), tone: 'primary' },
@@ -477,7 +477,7 @@ export const useScheduleDashboardPage = () => {
         tone: 'success',
         icon: PieChart,
         span: 6,
-        hasData: statusChartData.value.length > 0,
+        hasData: statusChartData.value.some((item) => item.value > 0),
         emptyText: '暂无整机状态分布',
         stats: [
           { label: '覆盖率', value: formatPercent(overview.machine_summary.scheduled_orders, overview.machine_summary.total_orders), tone: 'success' },
@@ -659,7 +659,10 @@ export const useScheduleDashboardPage = () => {
   }
 
   const handleResize = () => {
-    chartInstances.forEach((chart) => chart.resize())
+    chartInstances.forEach((chart) => {
+      const dom = chart.getDom()
+      if (dom && dom.offsetWidth > 0) chart.resize()
+    })
   }
 
   const handleGoToLogin = () => {
@@ -739,6 +742,15 @@ export const useScheduleDashboardPage = () => {
   onMounted(() => {
     void initializeDashboardOverview()
     window.addEventListener('resize', handleResize)
+  })
+
+  onDeactivated(() => {
+    window.removeEventListener('resize', handleResize)
+  })
+
+  onActivated(() => {
+    window.addEventListener('resize', handleResize)
+    handleResize()
   })
 
   onUnmounted(() => {

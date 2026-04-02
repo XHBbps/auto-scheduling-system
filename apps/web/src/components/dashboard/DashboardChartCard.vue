@@ -72,7 +72,7 @@ const bindChartRef = (ref: Element | ComponentPublicInstance | null) => {
   display: flex;
   min-height: 388px;
   flex-direction: column;
-  padding: 20px;
+  padding: 24px;
   border-radius: 16px;
   background: #1a1d1c;
 }

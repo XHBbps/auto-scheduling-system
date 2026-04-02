@@ -1,5 +1,5 @@
 ﻿<template>
-  <div class="tech-card p-8" data-test="dashboard-state-card" v-loading="loading">
+  <div class="tech-card p-6" data-test="dashboard-state-card" v-loading="loading">
     <div class="dashboard-state-card">
       <div class="dashboard-state-card__icon">
         <el-icon :size="24"><Warning /></el-icon>

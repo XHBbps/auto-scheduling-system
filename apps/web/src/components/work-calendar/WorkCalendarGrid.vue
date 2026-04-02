@@ -106,9 +106,7 @@ defineEmits<{
   flex-direction: column;
   gap: 8px;
   width: 100%;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.015) 100%),
-    rgba(255, 255, 255, 0.02);
+  background: #1a1d1c;
   color: #d7dce0;
   text-align: left;
   cursor: pointer;
@@ -118,9 +116,7 @@ defineEmits<{
 .calendar-cell--active:hover {
   transform: translateY(-1px);
   border-color: rgba(130, 214, 149, 0.28);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.02) 100%),
-    rgba(255, 255, 255, 0.03);
+  background: #1e2120;
 }
 
 .calendar-cell--empty {

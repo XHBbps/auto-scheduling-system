@@ -165,7 +165,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
@@ -195,7 +195,9 @@ import { getRouteAccessRequirement, hasAccessRequirement } from '../utils/access
 
 const route = useRoute()
 const router = useRouter()
-const isCollapse = ref(false)
+const SIDEBAR_COLLAPSE_KEY = 'sidebar_collapsed'
+const isCollapse = ref(localStorage.getItem(SIDEBAR_COLLAPSE_KEY) === 'true')
+watch(isCollapse, (val) => localStorage.setItem(SIDEBAR_COLLAPSE_KEY, String(val)))
 const scheduleRunning = ref(false)
 const sessionState = ref(getAuthSessionState())
 

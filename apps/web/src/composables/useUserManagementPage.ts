@@ -475,6 +475,10 @@ export const useUserManagementPage = () => {
         ElMessage.warning('请输入初始密码')
         return
       }
+      if (userDialog.form.password.length < 8) {
+        ElMessage.warning('密码长度不能少于 8 位')
+        return
+      }
       if (!userDialog.form.role_codes.length) {
         ElMessage.warning('请至少选择一个角色')
         return
@@ -487,7 +491,7 @@ export const useUserManagementPage = () => {
         await createAdminUser({
           username: userDialog.form.username.trim(),
           display_name: userDialog.form.display_name.trim(),
-          password: userDialog.form.password.trim(),
+          password: userDialog.form.password,
           role_codes: userDialog.form.role_codes,
           is_active: userDialog.form.is_active,
         })
@@ -571,6 +575,10 @@ export const useUserManagementPage = () => {
       ElMessage.warning('请输入新密码')
       return
     }
+    if (passwordDialog.new_password.length < 8) {
+      ElMessage.warning('密码长度不能少于 8 位')
+      return
+    }
 
     try {
       await confirmManagementAction({
@@ -587,7 +595,7 @@ export const useUserManagementPage = () => {
     submitting.value = true
     try {
       await resetAdminUserPassword(passwordDialog.userId, {
-        new_password: passwordDialog.new_password.trim(),
+        new_password: passwordDialog.new_password,
       })
       ElMessage.success('密码已重置')
       passwordDialog.visible = false
@@ -614,9 +622,13 @@ export const useUserManagementPage = () => {
       return
     }
 
-    await updateAdminUserStatus(user.id, { is_active: nextStatus })
-    ElMessage.success(nextStatus ? '用户已启用' : '用户已停用')
-    await loadUsersTabResources()
+    try {
+      await updateAdminUserStatus(user.id, { is_active: nextStatus })
+      ElMessage.success(nextStatus ? '用户已启用' : '用户已停用')
+      await loadUsersTabResources()
+    } catch {
+      // httpClient 拦截器已弹出错误提示
+    }
   }
 
   const openCreateRoleDialog = () => {
@@ -712,9 +724,13 @@ export const useUserManagementPage = () => {
       return
     }
 
-    await updateAdminRoleStatus(role.id, { is_active: nextStatus })
-    ElMessage.success(nextStatus ? '角色已启用' : '角色已停用')
-    await loadAccessibleManagementResources()
+    try {
+      await updateAdminRoleStatus(role.id, { is_active: nextStatus })
+      ElMessage.success(nextStatus ? '角色已启用' : '角色已停用')
+      await loadAccessibleManagementResources()
+    } catch {
+      // httpClient 拦截器已弹出错误提示
+    }
   }
 
   const handleDeleteRole = async (role: AdminRoleItem) => {
@@ -730,9 +746,13 @@ export const useUserManagementPage = () => {
       return
     }
 
-    await deleteAdminRole(role.id)
-    ElMessage.success('角色已删除')
-    await loadAccessibleManagementResources()
+    try {
+      await deleteAdminRole(role.id)
+      ElMessage.success('角色已删除')
+      await loadAccessibleManagementResources()
+    } catch {
+      // httpClient 拦截器已弹出错误提示
+    }
   }
 
   watch(availableTabs, (tabs) => {
