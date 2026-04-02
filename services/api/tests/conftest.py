@@ -36,6 +36,7 @@ async def app_client(db_session):
     from app.database import get_session
     from app.main import app
     from app.routers.auth_router import limiter
+    from app.services.user_auth_service import ensure_identity_seeded
 
     async def override_get_session():
         yield db_session
@@ -51,6 +52,10 @@ async def app_client(db_session):
     settings.user_session_cookie_secure = False
     limiter.enabled = False
     app.dependency_overrides[get_session] = override_get_session
+
+    # Seed admin user (lifespan doesn't run in test ASGITransport)
+    await ensure_identity_seeded(db_session)
+    await db_session.commit()
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url='http://test') as client:
