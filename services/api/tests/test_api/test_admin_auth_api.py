@@ -229,12 +229,10 @@ async def test_auth_session_turns_unauthenticated_after_user_is_disabled(app_cli
 
 @pytest.mark.asyncio
 async def test_identity_seed_requires_explicit_bootstrap_password(db_session):
-    original_token = settings.admin_api_token
     original_password = settings.bootstrap_admin_password
     original_username = settings.bootstrap_admin_username
     original_display_name = settings.bootstrap_admin_display_name
     try:
-        settings.admin_api_token = 'legacy-fallback-token'
         settings.bootstrap_admin_password = ''
         settings.bootstrap_admin_username = 'admin'
         settings.bootstrap_admin_display_name = '系统管理员'
@@ -242,7 +240,6 @@ async def test_identity_seed_requires_explicit_bootstrap_password(db_session):
         with pytest.raises(RuntimeError, match='BOOTSTRAP_ADMIN_PASSWORD'):
             await ensure_identity_seeded(db_session)
     finally:
-        settings.admin_api_token = original_token
         settings.bootstrap_admin_password = original_password
         settings.bootstrap_admin_username = original_username
         settings.bootstrap_admin_display_name = original_display_name
