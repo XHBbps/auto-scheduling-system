@@ -39,13 +39,17 @@ async def app_client(db_session):
     async def override_get_session():
         yield db_session
 
+    original_env = settings.app_env
     original_username = settings.bootstrap_admin_username
     original_display_name = settings.bootstrap_admin_display_name
     original_password = settings.bootstrap_admin_password
+    original_cookie_secure = settings.user_session_cookie_secure
 
+    settings.app_env = 'test'
     settings.bootstrap_admin_username = 'admin'
     settings.bootstrap_admin_display_name = '系统管理员'
     settings.bootstrap_admin_password = 'Admin123456'
+    settings.user_session_cookie_secure = False
     app.dependency_overrides[get_session] = override_get_session
 
     transport = ASGITransport(app=app)
@@ -57,9 +61,11 @@ async def app_client(db_session):
         assert login_resp.status_code == 200
         yield client
 
+    settings.app_env = original_env
     settings.bootstrap_admin_username = original_username
     settings.bootstrap_admin_display_name = original_display_name
     settings.bootstrap_admin_password = original_password
+    settings.user_session_cookie_secure = original_cookie_secure
     app.dependency_overrides.clear()
 
 
@@ -74,20 +80,26 @@ async def app_client_no_admin_token(db_session):
     async def override_get_session():
         yield db_session
 
+    original_env = settings.app_env
     original_username = settings.bootstrap_admin_username
     original_display_name = settings.bootstrap_admin_display_name
     original_password = settings.bootstrap_admin_password
+    original_cookie_secure = settings.user_session_cookie_secure
 
+    settings.app_env = 'test'
     settings.bootstrap_admin_username = 'admin'
     settings.bootstrap_admin_display_name = '系统管理员'
     settings.bootstrap_admin_password = 'Admin123456'
+    settings.user_session_cookie_secure = False
     app.dependency_overrides[get_session] = override_get_session
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url='http://test') as client:
         yield client
 
+    settings.app_env = original_env
     settings.bootstrap_admin_username = original_username
     settings.bootstrap_admin_display_name = original_display_name
     settings.bootstrap_admin_password = original_password
+    settings.user_session_cookie_secure = original_cookie_secure
     app.dependency_overrides.clear()
