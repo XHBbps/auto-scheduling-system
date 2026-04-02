@@ -53,10 +53,7 @@ def _get_real_ip(request):
         return forwarded.split(",")[0].strip()
     return direct_ip
 
-limiter = Limiter(
-    key_func=_get_real_ip,
-    enabled=settings.app_env.lower() not in {"test", "testing"},
-)
+limiter = Limiter(key_func=_get_real_ip)
 router = APIRouter(prefix="/api/auth", tags=["用户认证"])
 
 
