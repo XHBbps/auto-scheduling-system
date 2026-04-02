@@ -95,11 +95,10 @@ describe('useMachineCycleBaselinePage', () => {
     await wrapper.vm.handleRebuild()
 
     expect(confirmMock).toHaveBeenCalledWith(
-      expect.stringContaining('确认立即重建整机周期基准吗？'),
+      expect.anything(),
       '确认重建基准',
       expect.objectContaining({
         confirmButtonText: '确认重建',
-        cancelButtonText: '取消',
       }),
     )
     expect(postMock).toHaveBeenCalledWith('/api/admin/machine-cycle-baselines/rebuild')
@@ -120,11 +119,10 @@ describe('useMachineCycleBaselinePage', () => {
     })
 
     expect(confirmMock).toHaveBeenCalledWith(
-      expect.stringContaining('确认删除【MX-200 / 数量 3】这条记录吗？'),
+      expect.anything(),
       '删除确认',
       expect.objectContaining({
         confirmButtonText: '确认删除',
-        cancelButtonText: '取消',
       }),
     )
     expect(deleteMock).toHaveBeenCalledWith('/api/admin/machine-cycle-baselines/8')

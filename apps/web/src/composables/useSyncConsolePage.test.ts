@@ -134,14 +134,8 @@ describe('useSyncConsolePage', () => {
 
     await wrapper.vm.handleSync(bomSource!)
 
-    expect(confirmMock).toHaveBeenCalledTimes(1)
-    expect(confirmMock.mock.calls[0]?.[1]).toBe('同步确认')
-    expect(confirmMock.mock.calls[0]?.[2]).toMatchObject({
-      confirmButtonText: '确认同步',
-      cancelButtonText: '暂不执行',
-      customClass: 'app-confirm-message-box app-confirm-message-box--sync',
-      dangerouslyUseHTMLString: true,
-    })
+    // Validation fires before confirm dialog — confirm should NOT be called
+    expect(confirmMock).not.toHaveBeenCalled()
     expect(postMock).not.toHaveBeenCalled()
     expect(warningMessageMock).toHaveBeenCalledWith('请输入物料号和工厂后再执行 BOM 同步')
   })

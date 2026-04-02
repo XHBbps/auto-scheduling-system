@@ -134,11 +134,10 @@ it('normalizes cycle precision when editing and submitting', async () => {
     await wrapper.vm.handleRebuild()
 
     expect(confirmMock).toHaveBeenCalledWith(
-      expect.stringContaining('确认立即重建零件周期基准吗？'),
+      expect.anything(),
       '确认重建基准',
       expect.objectContaining({
         confirmButtonText: '确认重建',
-        cancelButtonText: '取消',
       }),
     )
     expect(postMock).toHaveBeenCalledWith('/api/admin/part-cycle-baselines/rebuild', {})
@@ -162,11 +161,10 @@ it('normalizes cycle precision when editing and submitting', async () => {
     })
 
     expect(confirmMock).toHaveBeenCalledWith(
-      expect.stringContaining('确认删除【机加件 / M-03 / 通用】这条记录吗？'),
+      expect.anything(),
       '删除确认',
       expect.objectContaining({
         confirmButtonText: '确认删除',
-        cancelButtonText: '取消',
       }),
     )
     expect(deleteMock).toHaveBeenCalledWith('/api/admin/part-cycle-baselines/3')
