@@ -98,6 +98,11 @@ async def app_client_no_admin_token(db_session):
     limiter.enabled = False
     app.dependency_overrides[get_session] = override_get_session
 
+    # Seed admin user (lifespan doesn't run in test ASGITransport)
+    from app.services.user_auth_service import ensure_identity_seeded
+    await ensure_identity_seeded(db_session)
+    await db_session.commit()
+
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url='http://test') as client:
         yield client
