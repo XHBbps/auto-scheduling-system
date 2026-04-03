@@ -6,6 +6,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.common.datetime_utils import utc_now
 from app.common.enums import BackgroundTaskStatus
 from app.common.exceptions import BizException, ErrorCode
 from app.models.background_task import BackgroundTask
@@ -24,9 +25,9 @@ async def test_execute_task_failure_keeps_handler_committed_changes(db_session, 
         payload={'filter_payload': {'k': 'v'}},
         attempt_count=1,
         max_attempts=1,
-        available_at=datetime.now(),
-        claimed_at=datetime.now(),
-        started_at=datetime.now(),
+        available_at=utc_now(),
+        claimed_at=utc_now(),
+        started_at=utc_now(),
         worker_id='worker-test',
     )
     db_session.add(task)
@@ -68,9 +69,9 @@ async def test_execute_task_failure_logs_failure_kind_and_stage(db_session, monk
         payload={'filter_payload': {'k': 'v'}},
         attempt_count=1,
         max_attempts=1,
-        available_at=datetime.now(),
-        claimed_at=datetime.now(),
-        started_at=datetime.now(),
+        available_at=utc_now(),
+        claimed_at=utc_now(),
+        started_at=utc_now(),
         worker_id='worker-test',
     )
     db_session.add(task)
@@ -110,9 +111,9 @@ async def test_execute_production_order_task_enqueues_part_cycle_rebuild(db_sess
         payload={},
         attempt_count=1,
         max_attempts=1,
-        available_at=datetime.now(),
-        claimed_at=datetime.now(),
-        started_at=datetime.now(),
+        available_at=utc_now(),
+        claimed_at=utc_now(),
+        started_at=utc_now(),
         worker_id='worker-test',
     )
     db_session.add(task)
@@ -152,8 +153,8 @@ async def test_execute_part_cycle_baseline_rebuild_finishes_linked_sync_job(db_s
     job = SyncJobLog(
         job_type='part_cycle_baseline',
         source_system='system',
-        start_time=datetime.now(),
-        heartbeat_at=datetime.now(),
+        start_time=utc_now(),
+        heartbeat_at=utc_now(),
         status='running',
         timeout_seconds=7200,
         message='queued',
@@ -170,9 +171,9 @@ async def test_execute_part_cycle_baseline_rebuild_finishes_linked_sync_job(db_s
         sync_job_log_id=job.id,
         attempt_count=1,
         max_attempts=1,
-        available_at=datetime.now(),
-        claimed_at=datetime.now(),
-        started_at=datetime.now(),
+        available_at=utc_now(),
+        claimed_at=utc_now(),
+        started_at=utc_now(),
         worker_id='worker-test',
     )
     db_session.add(task)
@@ -214,8 +215,8 @@ async def test_execute_snapshot_reconcile_finishes_linked_sync_job(db_session, m
     job = SyncJobLog(
         job_type='schedule_snapshot_reconcile',
         source_system='system',
-        start_time=datetime.now(),
-        heartbeat_at=datetime.now(),
+        start_time=utc_now(),
+        heartbeat_at=utc_now(),
         status='running',
         timeout_seconds=7200,
         message='queued',
@@ -232,9 +233,9 @@ async def test_execute_snapshot_reconcile_finishes_linked_sync_job(db_session, m
         sync_job_log_id=job.id,
         attempt_count=1,
         max_attempts=1,
-        available_at=datetime.now(),
-        claimed_at=datetime.now(),
-        started_at=datetime.now(),
+        available_at=utc_now(),
+        claimed_at=utc_now(),
+        started_at=utc_now(),
         worker_id='worker-test',
     )
     db_session.add(task)
@@ -273,8 +274,8 @@ async def test_execute_bom_backfill_queue_consume_finishes_linked_sync_job(db_se
     job = SyncJobLog(
         job_type='bom_backfill_queue',
         source_system='system',
-        start_time=datetime.now(),
-        heartbeat_at=datetime.now(),
+        start_time=utc_now(),
+        heartbeat_at=utc_now(),
         status='running',
         timeout_seconds=7200,
         message='queued',
@@ -291,9 +292,9 @@ async def test_execute_bom_backfill_queue_consume_finishes_linked_sync_job(db_se
         sync_job_log_id=job.id,
         attempt_count=1,
         max_attempts=1,
-        available_at=datetime.now(),
-        claimed_at=datetime.now(),
-        started_at=datetime.now(),
+        available_at=utc_now(),
+        claimed_at=utc_now(),
+        started_at=utc_now(),
         worker_id='worker-test',
     )
     db_session.add(task)
@@ -355,7 +356,7 @@ async def test_run_forever_claims_one_task_at_a_time(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_heartbeat_refreshes_claimed_at_and_prevents_stale_recovery(db_session, monkeypatch):
-    stale_time = datetime.now() - timedelta(days=1)
+    stale_time = utc_now() - timedelta(days=1)
     job = SyncJobLog(
         job_type='sales_plan',
         source_system='guandata',
@@ -419,7 +420,7 @@ async def test_heartbeat_refreshes_claimed_at_and_prevents_stale_recovery(db_ses
 
 @pytest.mark.asyncio
 async def test_recover_stale_tasks_requeues_retryable_running_task(db_session):
-    now = datetime.now()
+    now = utc_now()
     stale_time = now - timedelta(days=1)
     job = SyncJobLog(
         job_type='sales_plan',
@@ -475,7 +476,7 @@ async def test_recover_stale_tasks_requeues_retryable_running_task(db_session):
 
 @pytest.mark.asyncio
 async def test_recover_stale_tasks_marks_exhausted_running_task_failed(db_session):
-    now = datetime.now()
+    now = utc_now()
     stale_time = now - timedelta(days=1)
     job = SyncJobLog(
         job_type='sales_plan',

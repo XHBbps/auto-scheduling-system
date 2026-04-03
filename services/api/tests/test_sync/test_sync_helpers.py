@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
+from app.common.datetime_utils import utc_now
 from app.sync.sync_support_utils import (
     SyncResult,
     finish_sync_job,
@@ -74,7 +75,7 @@ async def test_get_running_sync_job_recovers_stale_job(db_session):
         source_system="guandata",
         timeout_seconds=1,
     )
-    job.heartbeat_at = datetime.now() - timedelta(seconds=10)
+    job.heartbeat_at = utc_now() - timedelta(seconds=10)
     await db_session.commit()
 
     running_job = await get_running_sync_job(db_session, "sales_plan", "guandata")
