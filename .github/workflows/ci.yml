@@ -36,7 +36,7 @@ jobs:
         run: ruff format --check app/ tests/ scripts/
 
       - name: Run tests
-        run: pytest --tb=short --cov=app --cov-report=term-missing --cov-fail-under=60 -q
+        run: pytest --tb=short --cov=app --cov-report=term-missing --cov-fail-under=70 -q
 
   frontend-check:
     name: Frontend Lint & Test
