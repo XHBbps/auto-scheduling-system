@@ -1,8 +1,10 @@
 ﻿import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import { useServerTableQuery } from './useServerTableQuery'
 import { useTableFeedbackState } from './useTableFeedbackState'
+import { useRequestCancellation } from './useRequestCancellation'
 import { useMachineCycleBaselineDialog } from './useMachineCycleBaselineDialog'
 import request from '../utils/httpClient'
 import { getTableSortColumnProps } from './useTableSort'
@@ -38,6 +40,7 @@ const createSearchForm = (): MachineCycleSearchForm => ({
 })
 
 export const useMachineCycleBaselinePage = () => {
+  const { newSignal } = useRequestCancellation()
   const sortableColumnProps = getTableSortColumnProps()
   const router = useRouter()
   const route = useRoute()
@@ -118,10 +121,12 @@ export const useMachineCycleBaselinePage = () => {
   const fetchData = async () => {
     loading.value = true
     showLoadingState()
+    const signal = newSignal()
     try {
       const res = await request.get<PaginatedResponse | MachineCycleItem[]>('/api/admin/machine-cycle-baselines', {
         params: buildQueryParams(),
         silentError: true,
+        signal,
       })
       if (Array.isArray(res)) {
         setTotal(res.length)
@@ -133,6 +138,7 @@ export const useMachineCycleBaselinePage = () => {
       }
       showEmptyState()
     } catch (error) {
+      if (axios.isCancel(error)) return
       console.error(error)
       tableData.value = []
       setTotal(0)

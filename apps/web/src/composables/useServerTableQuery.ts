@@ -1,6 +1,8 @@
+import axios from 'axios'
 import { ref, type Ref } from 'vue'
 import { cleanParams } from '../utils/format'
 import { DEFAULT_TABLE_PAGE_SIZE, TABLE_PAGE_SIZE_OPTIONS } from './useTablePagination'
+import { useRequestCancellation } from './useRequestCancellation'
 import {
   getTableSortColumnProps,
   useTableSort,
@@ -27,7 +29,7 @@ export interface UseRemoteTableQueryOptions<
   TItem,
   TResponse,
 > extends UseServerTableQueryOptions<TSearch> {
-  request: (params: Record<string, unknown>) => Promise<TResponse>
+  request: (params: Record<string, unknown>, signal?: AbortSignal) => Promise<TResponse>
   resolveItems?: (response: TResponse) => TItem[]
   resolveTotal?: (response: TResponse, items: TItem[]) => number
   perfScope?: string
@@ -159,6 +161,7 @@ export const useRemoteTableQuery = <
   const tableData = ref<TItem[]>([])
   const { tableFeedbackState, showLoadingState, showEmptyState, showErrorState } =
     useTableFeedbackState()
+  const { newSignal } = useRequestCancellation()
 
   const {
     searchForm,
@@ -181,6 +184,7 @@ export const useRemoteTableQuery = <
   const fetchData = async (config?: { silentLoading?: boolean }) => {
     const silentLoading = config?.silentLoading === true
     const params = buildQueryParams()
+    const signal = newSignal()
     loading.value = !silentLoading
     if (!silentLoading) {
       showLoadingState()
@@ -191,19 +195,20 @@ export const useRemoteTableQuery = <
         ? await measureAsync(
             options.perfScope,
             options.perfLabel || 'fetchData',
-            () => options.request(params),
+            () => options.request(params, signal),
             options.buildPerfMeta?.(params) || {
               silentLoading,
               pageNo: pageNo.value,
               pageSize: pageSize.value,
             },
           )
-        : await options.request(params)
+        : await options.request(params, signal)
       const items = options.resolveItems?.(response) ?? defaultResolveItems<TItem, TResponse>(response)
       tableData.value = items
       setTotal(options.resolveTotal?.(response, items) ?? defaultResolveTotal(response, items))
       showEmptyState()
     } catch (error) {
+      if (axios.isCancel(error)) return
       console.error(error)
       showErrorState(error)
       tableData.value = []

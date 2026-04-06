@@ -4,6 +4,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.common.datetime_utils import local_today
 from app.common.text_parse_utils import normalize_assembly_name
 from app.models.sales_plan import SalesPlanOrderLineSrc
 from app.repository.bom_relation_repo import BomRelationRepo
@@ -33,7 +34,7 @@ logger = logging.getLogger(__name__)
 class ScheduleOrchestrator:
     def __init__(self, session: AsyncSession, today: date | None = None):
         self.session = session
-        self.today = today or date.today()
+        self.today = today or local_today()
         self.bom_repo = BomRelationRepo(session)
         self.issue_repo = DataIssueRepo(session)
         self.check_service = ScheduleCheckService(session, today=self.today)

@@ -1,7 +1,9 @@
 ﻿import { computed, ref } from 'vue'
+import axios from 'axios'
 import type { DashboardOverviewResponse } from '../types/apiModels'
 import request from '../utils/httpClient'
 import { clearCachedRequest, getCachedAsync } from '../utils/requestCache'
+import { useRequestCancellation } from './useRequestCancellation'
 
 export type DashboardOverviewState = 'loading' | 'ready' | 'empty' | 'error' | 'auth'
 
@@ -52,6 +54,7 @@ const resolveDashboardStateMessage = (
 }
 
 export const useDashboardOverview = () => {
+  const { newSignal } = useRequestCancellation()
   const overview = ref<DashboardOverviewResponse | null>(null)
   const state = ref<DashboardOverviewState>('loading')
   const message = ref('正在读取排产总览，请稍候...')
@@ -62,6 +65,7 @@ export const useDashboardOverview = () => {
   const loadOverview = async (options?: { forceRefresh?: boolean }) => {
     state.value = 'loading'
     message.value = '正在读取排产总览，请稍候...'
+    const signal = newSignal()
 
     try {
       if (options?.forceRefresh) {
@@ -70,6 +74,7 @@ export const useDashboardOverview = () => {
       const data = await getCachedAsync(DASHBOARD_OVERVIEW_CACHE_KEY, DASHBOARD_OVERVIEW_CACHE_TTL_MS, () =>
         request.get<DashboardOverviewResponse>(DASHBOARD_OVERVIEW_URL, {
           silentError: true,
+          signal,
         }),
       )
       overview.value = data
@@ -81,6 +86,7 @@ export const useDashboardOverview = () => {
       state.value = 'ready'
       message.value = ''
     } catch (error) {
+      if (axios.isCancel(error)) return
       overview.value = null
       const status = typeof error === 'object' && error && 'status' in error ? (error as { status?: number }).status : undefined
       state.value = status === 401 || status === 403 ? 'auth' : 'error'

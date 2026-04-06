@@ -24,6 +24,7 @@ vi.mock('axios', () => {
         patch: vi.fn(),
         delete: vi.fn(),
       })),
+      isCancel: vi.fn(() => false),
     },
   }
 })

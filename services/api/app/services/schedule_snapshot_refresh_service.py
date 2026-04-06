@@ -6,7 +6,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.common.datetime_utils import utc_now
+from app.common.datetime_utils import local_today, utc_now
 from app.config import settings
 from app.database import async_session_factory as default_async_session_factory
 from app.models.data_issue import DataIssueRecord
@@ -55,7 +55,7 @@ class ScheduleSnapshotRefreshService:
         session_factory: async_sessionmaker[AsyncSession] | None = None,
     ):
         self.session = session
-        self.today = today or date.today()
+        self.today = today or local_today()
         self.session_factory = session_factory or self._build_session_factory(session)
         self.snapshot_repo = OrderScheduleSnapshotRepo(session)
         self.machine_repo = MachineScheduleResultRepo(session)

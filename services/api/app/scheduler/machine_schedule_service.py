@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.baseline.assembly_time_default_service import AssemblyTimeDefaultService
 from app.common.calendar_utils import subtract_workdays
-from app.common.datetime_utils import utc_now
+from app.common.datetime_utils import local_today, utc_now
 from app.models.machine_schedule_result import MachineScheduleResult
 from app.models.sales_plan import SalesPlanOrderLineSrc
 from app.repository.assembly_time_repo import AssemblyTimeRepo
@@ -23,7 +23,7 @@ _DEFAULT_FINAL_ASSEMBLY_DAYS = Decimal("3")
 class MachineScheduleService:
     def __init__(self, session: AsyncSession, today: date | None = None):
         self.session = session
-        self.today = today or date.today()
+        self.today = today or local_today()
         self.baseline_repo = MachineCycleBaselineRepo(session)
         self.result_repo = MachineScheduleResultRepo(session)
         self.assembly_repo = AssemblyTimeRepo(session)

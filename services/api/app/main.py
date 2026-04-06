@@ -44,6 +44,9 @@ async def lifespan(app: FastAPI):
             await session.commit()
         logger.info("Identity seed check completed on startup.")
     except Exception as exc:
+        if _is_production:
+            logger.error("Identity seed failed in production — aborting startup: %s", exc)
+            raise
         logger.warning("Identity seed on startup skipped: %s", exc)
 
     yield
@@ -99,7 +102,8 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         from app.common.metrics import http_request_duration_seconds, http_requests_total
 
         method = request.method
-        path = request.url.path
+        route = request.scope.get("route")
+        path = route.path if route else "__unmatched__"
         start = time.perf_counter()
         response = await call_next(request)
         duration = time.perf_counter() - start

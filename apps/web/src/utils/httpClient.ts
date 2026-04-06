@@ -71,6 +71,29 @@ request.interceptors.request.use((config) => {
   return config
 })
 
+const MAX_RETRIES = 2
+const RETRY_STATUS_CODES = new Set([408, 429, 500, 502, 503, 504])
+const RETRY_BACKOFF_MS = 1000
+
+request.interceptors.response.use(undefined, async (error) => {
+  if (axios.isCancel(error)) return Promise.reject(error)
+  const config = error.config as RequestConfig & { _retryCount?: number }
+  if (!config) return Promise.reject(error)
+
+  const status = error.response?.status
+  const isRetryable = !status || RETRY_STATUS_CODES.has(status)
+  config._retryCount = config._retryCount ?? 0
+
+  if (isRetryable && config._retryCount < MAX_RETRIES) {
+    config._retryCount += 1
+    const delay = RETRY_BACKOFF_MS * Math.pow(2, config._retryCount - 1)
+    await new Promise((resolve) => setTimeout(resolve, delay))
+    return request(config)
+  }
+
+  return Promise.reject(error)
+})
+
 request.interceptors.response.use(
   (response) => {
     if (response.config.responseType === 'blob') {
@@ -84,6 +107,7 @@ request.interceptors.response.use(
     return data
   },
   (error) => {
+    if (axios.isCancel(error)) return Promise.reject(error)
     const response = error?.response
     const message = response?.data?.message || response?.data?.detail || error?.message || '网络请求失败'
     const normalizedError = new Error(message) as Error & { status?: number }

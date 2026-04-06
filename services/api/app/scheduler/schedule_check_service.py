@@ -6,6 +6,7 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.calendar_utils import subtract_workdays
+from app.common.datetime_utils import local_today
 from app.common.plant_utils import normalize_plant
 from app.models.machine_cycle_baseline import MachineCycleBaseline
 from app.models.sales_plan import SalesPlanOrderLineSrc
@@ -22,7 +23,7 @@ _DEFAULT_MACHINE_CYCLE_DAYS = Decimal("90")
 class ScheduleCheckService:
     def __init__(self, session: AsyncSession, today: date | None = None):
         self.session = session
-        self.today = today or date.today()
+        self.today = today or local_today()
         self.bom_repo = BomRelationRepo(session)
         self.baseline_repo = MachineCycleBaselineRepo(session)
         self.calendar_repo = WorkCalendarRepo(session)

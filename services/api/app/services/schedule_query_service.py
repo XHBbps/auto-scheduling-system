@@ -4,6 +4,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.common.datetime_utils import local_today
 from app.common.dirty_text_utils import normalize_legacy_issue_detail
 from app.repository.data_issue_repo import DataIssueRepo
 from app.repository.order_schedule_snapshot_repo import OrderScheduleSnapshotRepo
@@ -147,7 +148,7 @@ class ScheduleQueryService:
         warning_orders = await self.snapshot_repo.list_warning_orders(limit=10)
         abnormal_machine_orders = await self.snapshot_repo.list_abnormal_orders(limit=50)
 
-        today = date.today()
+        today = local_today()
 
         planned_end_day_raw = await self.snapshot_repo.aggregate_quantity_by_day(
             "planned_end_date",

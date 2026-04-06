@@ -69,11 +69,14 @@ describe('useRemoteTableQuery', () => {
     searchForm.value.keyword = 'soul'
     await fetchData()
 
-    expect(request).toHaveBeenCalledWith({
-      keyword: 'soul',
-      page_no: 1,
-      page_size: 10,
-    })
+    expect(request).toHaveBeenCalledWith(
+      {
+        keyword: 'soul',
+        page_no: 1,
+        page_size: 10,
+      },
+      expect.any(AbortSignal),
+    )
     expect(tableData.value).toEqual([
       { id: 1, name: 'A' },
       { id: 2, name: 'B' },
@@ -84,11 +87,14 @@ describe('useRemoteTableQuery', () => {
 
     searchForm.value.keyword = 'next'
     await handleSearch()
-    expect(request).toHaveBeenLastCalledWith({
-      keyword: 'next',
-      page_no: 1,
-      page_size: 10,
-    })
+    expect(request).toHaveBeenLastCalledWith(
+      {
+        keyword: 'next',
+        page_no: 1,
+        page_size: 10,
+      },
+      expect.any(AbortSignal),
+    )
 
     await handleReset()
     expect(searchForm.value.keyword).toBe('')
@@ -134,12 +140,15 @@ describe('useRemoteTableQuery', () => {
     handleTableSortChange({ prop: 'createdAt', order: 'descending' })
     await fetchData()
 
-    expect(request).toHaveBeenLastCalledWith({
-      page_no: 1,
-      page_size: 10,
-      source_system: 'sap',
-      sort_field: 'created_at',
-      sort_order: 'desc',
-    })
+    expect(request).toHaveBeenLastCalledWith(
+      {
+        page_no: 1,
+        page_size: 10,
+        source_system: 'sap',
+        sort_field: 'created_at',
+        sort_order: 'desc',
+      },
+      expect.any(AbortSignal),
+    )
   })
 })

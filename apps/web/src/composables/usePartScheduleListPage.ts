@@ -1,7 +1,9 @@
-﻿import { onMounted, ref, watch } from 'vue'
+﻿import axios from 'axios'
+import { onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useServerTableQuery } from './useServerTableQuery'
 import { useExportAction } from './useExportAction'
+import { useRequestCancellation } from './useRequestCancellation'
 import { useTableFeedbackState } from './useTableFeedbackState'
 import { getTableSortColumnProps } from './useTableSort'
 import request from '../utils/httpClient'
@@ -82,6 +84,7 @@ const normalizeVisibleColumnKeys = (value: unknown): PartScheduleOptionalColumnK
 export const usePartScheduleListPage = () => {
   const sortableColumnProps = getTableSortColumnProps()
   const { exporting, runConfirmedExport } = useExportAction()
+  const { newSignal } = useRequestCancellation()
   const { tableFeedbackState, showLoadingState, showEmptyState, showErrorState } = useTableFeedbackState()
   const router = useRouter()
   const route = useRoute()
@@ -167,6 +170,7 @@ export const usePartScheduleListPage = () => {
   const fetchData = async () => {
     loading.value = true
     showLoadingState()
+    const signal = newSignal()
     try {
       const params = buildQueryParams()
       const res = await measureAsync(
@@ -175,6 +179,7 @@ export const usePartScheduleListPage = () => {
         () =>
           request.get<PaginatedResponse<PartScheduleItem>>('/api/part-schedules', {
             params,
+            signal,
             silentError: true,
           }),
         {
@@ -187,6 +192,7 @@ export const usePartScheduleListPage = () => {
       showEmptyState()
       setTotal(res.total)
     } catch (error) {
+      if (axios.isCancel(error)) return
       console.error(error)
       showErrorState(error)
     } finally {

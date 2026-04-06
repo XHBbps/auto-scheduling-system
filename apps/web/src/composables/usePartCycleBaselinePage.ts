@@ -1,8 +1,10 @@
 ﻿import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import { useServerTableQuery } from './useServerTableQuery'
 import { useTableFeedbackState } from './useTableFeedbackState'
+import { useRequestCancellation } from './useRequestCancellation'
 import { applyLocalSort, getTableSortColumnProps } from './useTableSort'
 import { usePartCycleBaselineDialog } from './usePartCycleBaselineDialog'
 import request from '../utils/httpClient'
@@ -49,6 +51,7 @@ const createSearchForm = (): PartCycleSearchForm => ({
 })
 
 export const usePartCycleBaselinePage = () => {
+  const { newSignal } = useRequestCancellation()
   const sortableColumnProps = getTableSortColumnProps()
   const router = useRouter()
   const route = useRoute()
@@ -145,15 +148,18 @@ export const usePartCycleBaselinePage = () => {
   const fetchData = async () => {
     loading.value = true
     showLoadingState()
+    const signal = newSignal()
     try {
       const res = await request.get<PartCycleItem[]>('/api/admin/part-cycle-baselines', {
         params: buildQueryParams({ includePagination: false }),
         silentError: true,
+        signal,
       })
       tableData.value = Array.isArray(res) ? res : []
       setTotal(tableData.value.length)
       showEmptyState()
     } catch (error) {
+      if (axios.isCancel(error)) return
       console.error(error)
       tableData.value = []
       setTotal(0)

@@ -290,28 +290,33 @@ class BackgroundTaskWorkerService:
         try:
             while True:
                 await asyncio.sleep(interval_seconds)
-                async with self.session_factory() as session:
-                    task = await session.get(BackgroundTask, task_id)
-                    if task is None or task.status != BackgroundTaskStatus.RUNNING.value:
-                        if lost_event is not None:
-                            lost_event.set()
-                        return
-                    # If task was reassigned to another worker, stop heartbeat.
-                    if task.worker_id != self.worker_id:
-                        logger.warning(
-                            "Heartbeat stopping: task_id=%s reassigned to worker_id=%s",
-                            task_id,
-                            task.worker_id,
-                        )
-                        if lost_event is not None:
-                            lost_event.set()
-                        return
-                    now = utc_now()
-                    task.claimed_at = now
-                    job = await self._load_job(session, task)
-                    if job is not None and job.status == "running":
-                        await touch_sync_job(session, job, touched_at=now)
-                    await session.commit()
+                try:
+                    async with self.session_factory() as session:
+                        task = await session.get(BackgroundTask, task_id)
+                        if task is None or task.status != BackgroundTaskStatus.RUNNING.value:
+                            if lost_event is not None:
+                                lost_event.set()
+                            return
+                        # If task was reassigned to another worker, stop heartbeat.
+                        if task.worker_id != self.worker_id:
+                            logger.warning(
+                                "Heartbeat stopping: task_id=%s reassigned to worker_id=%s",
+                                task_id,
+                                task.worker_id,
+                            )
+                            if lost_event is not None:
+                                lost_event.set()
+                            return
+                        now = utc_now()
+                        task.claimed_at = now
+                        job = await self._load_job(session, task)
+                        if job is not None and job.status == "running":
+                            await touch_sync_job(session, job, touched_at=now)
+                        await session.commit()
+                except asyncio.CancelledError:
+                    raise
+                except Exception:
+                    logger.exception("Heartbeat DB error for task_id=%s, will retry next interval", task_id)
         except asyncio.CancelledError:
             raise
 

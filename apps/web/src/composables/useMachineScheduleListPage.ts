@@ -1,8 +1,10 @@
+import axios from 'axios'
 import { h, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useServerTableQuery } from './useServerTableQuery'
 import { useExportAction } from './useExportAction'
+import { useRequestCancellation } from './useRequestCancellation'
 import { useTableFeedbackState } from './useTableFeedbackState'
 import { getTableSortColumnProps } from './useTableSort'
 import { ensureAuthSession, getAuthSessionState } from '../utils/authSession'
@@ -103,6 +105,7 @@ export const useMachineScheduleListPage = () => {
   const router = useRouter()
   const route = useRoute()
   const { exporting, runConfirmedExport } = useExportAction()
+  const { newSignal } = useRequestCancellation()
   const { tableFeedbackState, showLoadingState, showEmptyState, showErrorState } = useTableFeedbackState()
 
   const dateRange = ref<[string, string] | null>(null)
@@ -210,6 +213,7 @@ export const useMachineScheduleListPage = () => {
   const fetchData = async () => {
     loading.value = true
     showLoadingState()
+    const signal = newSignal()
     try {
       const params = buildQueryParams()
       const res = await measureAsync(
@@ -218,6 +222,7 @@ export const useMachineScheduleListPage = () => {
         () =>
           request.get<PaginatedResponse<MachineScheduleItem>>('/api/schedules', {
             params,
+            signal,
             silentError: true,
           }),
         {
@@ -231,6 +236,7 @@ export const useMachineScheduleListPage = () => {
       showEmptyState()
       setTotal(res.total)
     } catch (error) {
+      if (axios.isCancel(error)) return
       console.error(error)
       showErrorState(error)
     } finally {

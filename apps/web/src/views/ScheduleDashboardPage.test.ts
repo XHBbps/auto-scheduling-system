@@ -241,7 +241,7 @@ describe('ScheduleDashboardPage', () => {
 
     const { wrapper } = await buildWrapper()
 
-    expect(getMock).toHaveBeenCalledWith('/api/dashboard/overview', { silentError: true })
+    expect(getMock).toHaveBeenCalledWith('/api/dashboard/overview', expect.objectContaining({ silentError: true }))
     expect(wrapper.find('[data-test="dashboard-content"]').exists()).toBe(true)
     expect(wrapper.find('[data-test="dashboard-state-card"]').exists()).toBe(false)
     expect(wrapper.text()).toContain('今日交付')
