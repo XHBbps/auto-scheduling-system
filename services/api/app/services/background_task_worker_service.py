@@ -107,6 +107,7 @@ class BackgroundTaskWorkerService:
                 await asyncio.sleep(max(settings.sync_task_worker_poll_interval_seconds, 0.1))
                 continue
             await self.execute_task(claimed[0].id)
+        logger.info("Worker shutdown complete: worker_id=%s", self.worker_id)
 
     def stop(self) -> None:
         self._stopping = True
