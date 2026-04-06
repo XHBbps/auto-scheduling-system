@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import date
-from typing import Any, Sequence
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -32,16 +33,20 @@ class ScheduleSnapshotRefreshSeedHelper:
             merged_stmt = merged_stmt.union(stmt)
         merged_subquery = merged_stmt.subquery()
         rows = (
-            await self.session.execute(
-                select(merged_subquery.c.order_line_id).order_by(merged_subquery.c.order_line_id.asc())
+            (
+                await self.session.execute(
+                    select(merged_subquery.c.order_line_id).order_by(merged_subquery.c.order_line_id.asc())
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         return [int(value) for value in rows if value is not None]
 
     @staticmethod
     def normalize_order_line_id_stmt(stmt):
         subquery = stmt.subquery()
-        first_column = list(subquery.c)[0]
+        first_column = next(iter(subquery.c))
         return select(first_column.label("order_line_id"))
 
     async def count_all_known_order_line_ids(self) -> int:
@@ -78,13 +83,11 @@ class ScheduleSnapshotRefreshSeedHelper:
 
     @staticmethod
     def known_order_line_ids_subquery():
-        sales_stmt = (
-            select(SalesPlanOrderLineSrc.id.label("order_line_id"))
-            .where(SalesPlanOrderLineSrc.id.is_not(None))
+        sales_stmt = select(SalesPlanOrderLineSrc.id.label("order_line_id")).where(
+            SalesPlanOrderLineSrc.id.is_not(None)
         )
-        machine_stmt = (
-            select(MachineScheduleResult.order_line_id.label("order_line_id"))
-            .where(MachineScheduleResult.order_line_id.is_not(None))
+        machine_stmt = select(MachineScheduleResult.order_line_id.label("order_line_id")).where(
+            MachineScheduleResult.order_line_id.is_not(None)
         )
         return sales_stmt.union(machine_stmt).subquery()
 
@@ -143,7 +146,7 @@ class ScheduleSnapshotRefreshSeedHelper:
         if not rows:
             return
         for start in range(0, len(rows), batch_size):
-            chunk = list(rows[start:start + batch_size])
+            chunk = list(rows[start : start + batch_size])
             stmt = pg_insert(OrderScheduleSnapshot).values(chunk)
             stmt = stmt.on_conflict_do_update(
                 constraint="uk_order_schedule_snapshot_order_line_id",

@@ -6,7 +6,6 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.datetime_utils import utc_now
-
 from app.config import settings
 from app.models.background_task import BackgroundTask
 from app.models.sync_job_log import SyncJobLog

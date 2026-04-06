@@ -1,6 +1,6 @@
 import logging
+from collections.abc import Iterable
 from decimal import Decimal
-from typing import Iterable
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -79,14 +79,10 @@ class AssemblyTimeDefaultService:
             return {}
 
         existing_map = {
-            item.assembly_name: item
-            for item in await self.repo.find_all_by_model(machine_model)
-            if item.assembly_name
+            item.assembly_name: item for item in await self.repo.find_all_by_model(machine_model) if item.assembly_name
         }
         result_map: dict[str, AssemblyTimeBaseline] = {
-            name: existing_map[name]
-            for name in normalized_names
-            if name in existing_map
+            name: existing_map[name] for name in normalized_names if name in existing_map
         }
 
         for assembly_name in normalized_names:

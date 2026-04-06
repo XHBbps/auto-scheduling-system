@@ -1,10 +1,9 @@
-from typing import Sequence
-
-from app.common.datetime_utils import utc_now
+from collections.abc import Sequence
 
 from sqlalchemy import and_, case, func, or_, select, tuple_
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.common.datetime_utils import utc_now
 from app.common.enums import BomBackfillQueueStatus
 from app.models.bom_backfill_queue import BomBackfillQueue
 from app.repository.base import BaseRepository
@@ -32,9 +31,7 @@ class BomBackfillQueueRepo(BaseRepository[BomBackfillQueue]):
         pairs = list(dict.fromkeys((str(material_no), str(plant)) for material_no, plant in items))
         if not pairs:
             return {}
-        stmt = select(BomBackfillQueue).where(
-            tuple_(BomBackfillQueue.material_no, BomBackfillQueue.plant).in_(pairs)
-        )
+        stmt = select(BomBackfillQueue).where(tuple_(BomBackfillQueue.material_no, BomBackfillQueue.plant).in_(pairs))
         entities = (await self.session.execute(stmt)).scalars().all()
         return {(entity.material_no, entity.plant): entity for entity in entities}
 
@@ -108,19 +105,20 @@ class BomBackfillQueueRepo(BaseRepository[BomBackfillQueue]):
         return total, items
 
     async def count_by_status(self) -> dict[str, int]:
-        stmt = (
-            select(BomBackfillQueue.status, func.count())
-            .group_by(BomBackfillQueue.status)
-        )
+        stmt = select(BomBackfillQueue.status, func.count()).group_by(BomBackfillQueue.status)
         rows = (await self.session.execute(stmt)).all()
         return {status: int(count) for status, count in rows}
 
     async def count_retry_wait_due(self) -> int:
         now = utc_now()
-        stmt = select(func.count()).select_from(BomBackfillQueue).where(
-            BomBackfillQueue.status == BomBackfillQueueStatus.RETRY_WAIT.value,
-            BomBackfillQueue.next_retry_at.is_not(None),
-            BomBackfillQueue.next_retry_at <= now,
+        stmt = (
+            select(func.count())
+            .select_from(BomBackfillQueue)
+            .where(
+                BomBackfillQueue.status == BomBackfillQueueStatus.RETRY_WAIT.value,
+                BomBackfillQueue.next_retry_at.is_not(None),
+                BomBackfillQueue.next_retry_at <= now,
+            )
         )
         return int((await self.session.execute(stmt)).scalar() or 0)
 
@@ -156,10 +154,12 @@ class BomBackfillQueueRepo(BaseRepository[BomBackfillQueue]):
         stmt = (
             select(BomBackfillQueue)
             .where(
-                BomBackfillQueue.status.in_([
-                    BomBackfillQueueStatus.RETRY_WAIT.value,
-                    BomBackfillQueueStatus.FAILED.value,
-                ])
+                BomBackfillQueue.status.in_(
+                    [
+                        BomBackfillQueueStatus.RETRY_WAIT.value,
+                        BomBackfillQueueStatus.FAILED.value,
+                    ]
+                )
             )
             .order_by(BomBackfillQueue.updated_at.desc(), BomBackfillQueue.id.desc())
             .limit(limit)
@@ -238,13 +238,15 @@ class BomBackfillQueueRepo(BaseRepository[BomBackfillQueue]):
                 BomBackfillQueue.next_retry_at.label("next_retry_at"),
                 BomBackfillQueue.updated_at.label("updated_at"),
                 func.count().over(partition_by=BomBackfillQueue.failure_kind).label("failure_kind_count"),
-                func.row_number().over(
+                func.row_number()
+                .over(
                     order_by=(
                         case((BomBackfillQueue.status.in_(failed_statuses), 0), else_=1).asc(),
                         BomBackfillQueue.updated_at.desc(),
                         BomBackfillQueue.id.desc(),
                     )
-                ).label("latest_rank"),
+                )
+                .label("latest_rank"),
             )
             .where(
                 or_(

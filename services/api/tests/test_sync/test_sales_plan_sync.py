@@ -1,50 +1,56 @@
-import pytest
 from unittest.mock import AsyncMock
+
+import pytest
 from sqlalchemy import select
 
-from app.sync.sales_plan_sync_service import SalesPlanSyncService
-from app.repository.sales_plan_repo import SalesPlanRepo
-from app.models.sales_plan import SalesPlanOrderLineSrc
 from app.models.machine_schedule_result import MachineScheduleResult
+from app.models.sales_plan import SalesPlanOrderLineSrc
+from app.repository.sales_plan_repo import SalesPlanRepo
+from app.sync.sales_plan_sync_service import SalesPlanSyncService
 
 
 @pytest.mark.asyncio
 async def test_sync_inserts_records(db_session):
     mock_client = AsyncMock()
     mock_client.fetch_sales_page.side_effect = [
-        ([{
-            "crm_no": "CRM001",
-            "contract_no": "HT001",
-            "customer_name": "客户A",
-            "detail_id": "DT001",
-            "product_model": "MC1-80",
-            "product_series": "MC1",
-            "product_name": "压力机",
-            "material_no": "MAT001",
-            "quantity": "2",
-            "contract_unit_price": "100000",
-            "confirmed_delivery_date": "2026-06-01",
-            "delivery_date": "2026-06-01",
-            "line_total_amount": "200000",
-            "order_no": "SO001",
-            "custom_no": "CUS001",
-            "order_type": "常规",
-            "is_automation_project": "false",
-            "business_group": "事业群A",
-            "sales_person_name": "张三",
-            "sales_person_job_no": "EMP001",
-            "order_date": "2026-03-01",
-            "sales_branch_company": "分公司A",
-            "sales_sub_branch": "支公司A",
-            "sap_code": "SAP001",
-            "sap_line_no": "10",
-            "oa_flow_id": None,
-            "operator_name": None,
-            "operator_job_no": None,
-            "review_comment": None,
-            "custom_requirement": None,
-            "delivery_plant": "1000",
-        }], 1),
+        (
+            [
+                {
+                    "crm_no": "CRM001",
+                    "contract_no": "HT001",
+                    "customer_name": "客户A",
+                    "detail_id": "DT001",
+                    "product_model": "MC1-80",
+                    "product_series": "MC1",
+                    "product_name": "压力机",
+                    "material_no": "MAT001",
+                    "quantity": "2",
+                    "contract_unit_price": "100000",
+                    "confirmed_delivery_date": "2026-06-01",
+                    "delivery_date": "2026-06-01",
+                    "line_total_amount": "200000",
+                    "order_no": "SO001",
+                    "custom_no": "CUS001",
+                    "order_type": "常规",
+                    "is_automation_project": "false",
+                    "business_group": "事业群A",
+                    "sales_person_name": "张三",
+                    "sales_person_job_no": "EMP001",
+                    "order_date": "2026-03-01",
+                    "sales_branch_company": "分公司A",
+                    "sales_sub_branch": "支公司A",
+                    "sap_code": "SAP001",
+                    "sap_line_no": "10",
+                    "oa_flow_id": None,
+                    "operator_name": None,
+                    "operator_job_no": None,
+                    "review_comment": None,
+                    "custom_requirement": None,
+                    "delivery_plant": "1000",
+                }
+            ],
+            1,
+        ),
     ]
 
     service = SalesPlanSyncService(db_session, mock_client)
@@ -121,50 +127,54 @@ async def test_sync_paginates_when_total_missing_but_page_full(db_session):
     mock_client = AsyncMock()
     page1 = []
     for idx in range(200):
-        page1.append({
-            "crm_no": f"CRM{idx:03d}",
-            "contract_no": f"HT{idx:03d}",
-            "customer_name": f"客户{idx}",
-            "detail_id": f"DT{idx:03d}",
-            "product_model": "MC1-80",
-            "product_series": "MC1",
-            "product_name": "整机",
-            "material_no": f"MAT{idx:03d}",
-            "quantity": "1",
-            "contract_unit_price": "100000",
-            "confirmed_delivery_date": "2026-06-01",
-            "delivery_date": "2026-06-01",
-            "line_total_amount": "100000",
-            "order_no": f"SO{idx:03d}",
-            "custom_no": f"CUS{idx:03d}",
-            "order_type": "1",
-            "is_automation_project": "false",
-            "business_group": "BG",
-            "sales_person_name": "tester",
-            "sales_person_job_no": "EMP001",
-            "order_date": "2026-03-01",
-            "sales_branch_company": "branch",
-            "sales_sub_branch": "sub",
-            "sap_code": f"SAP{idx:03d}",
-            "sap_line_no": "10",
-            "oa_flow_id": None,
-            "operator_name": None,
-            "operator_job_no": None,
-            "review_comment": None,
-            "custom_requirement": None,
-            "delivery_plant": "1000",
-        })
-    page2 = [{
-        **page1[0],
-        "crm_no": "CRM200",
-        "contract_no": "HT200",
-        "customer_name": "客户200",
-        "detail_id": "DT200",
-        "material_no": "MAT200",
-        "order_no": "SO200",
-        "custom_no": "CUS200",
-        "sap_code": "SAP200",
-    }]
+        page1.append(
+            {
+                "crm_no": f"CRM{idx:03d}",
+                "contract_no": f"HT{idx:03d}",
+                "customer_name": f"客户{idx}",
+                "detail_id": f"DT{idx:03d}",
+                "product_model": "MC1-80",
+                "product_series": "MC1",
+                "product_name": "整机",
+                "material_no": f"MAT{idx:03d}",
+                "quantity": "1",
+                "contract_unit_price": "100000",
+                "confirmed_delivery_date": "2026-06-01",
+                "delivery_date": "2026-06-01",
+                "line_total_amount": "100000",
+                "order_no": f"SO{idx:03d}",
+                "custom_no": f"CUS{idx:03d}",
+                "order_type": "1",
+                "is_automation_project": "false",
+                "business_group": "BG",
+                "sales_person_name": "tester",
+                "sales_person_job_no": "EMP001",
+                "order_date": "2026-03-01",
+                "sales_branch_company": "branch",
+                "sales_sub_branch": "sub",
+                "sap_code": f"SAP{idx:03d}",
+                "sap_line_no": "10",
+                "oa_flow_id": None,
+                "operator_name": None,
+                "operator_job_no": None,
+                "review_comment": None,
+                "custom_requirement": None,
+                "delivery_plant": "1000",
+            }
+        )
+    page2 = [
+        {
+            **page1[0],
+            "crm_no": "CRM200",
+            "contract_no": "HT200",
+            "customer_name": "客户200",
+            "detail_id": "DT200",
+            "material_no": "MAT200",
+            "order_no": "SO200",
+            "custom_no": "CUS200",
+            "sap_code": "SAP200",
+        }
+    ]
 
     mock_client.fetch_sales_page.side_effect = [
         (page1, 0),
@@ -186,48 +196,53 @@ async def test_sync_paginates_when_total_missing_but_page_full(db_session):
 async def test_sync_parses_space_separated_datetime(db_session):
     mock_client = AsyncMock()
     mock_client.fetch_sales_page.side_effect = [
-        ([{
-            "crm_no": "CRM001",
-            "contract_no": "HT001",
-            "customer_name": "客户A",
-            "detail_id": "DT001",
-            "product_model": "MC1-80",
-            "product_series": "MC1",
-            "product_name": "整机",
-            "material_no": "MAT001",
-            "quantity": "2",
-            "contract_unit_price": "100000",
-            "confirmed_delivery_date": "2025-03-28 00:00:00",
-            "delivery_date": "2025-03-29 00:00:00",
-            "line_total_amount": "200000",
-            "order_no": "SO001",
-            "custom_no": "CUS001",
-            "order_type": "1",
-            "is_automation_project": "false",
-            "business_group": "BG",
-            "sales_person_name": "tester",
-            "sales_person_job_no": "EMP001",
-            "order_date": "2025-02-15",
-            "sales_branch_company": "branch",
-            "sales_sub_branch": "sub",
-            "sap_code": "SAP001",
-            "sap_line_no": "10",
-            "oa_flow_id": None,
-            "operator_name": None,
-            "operator_job_no": None,
-            "review_comment": None,
-            "custom_requirement": None,
-            "delivery_plant": "1000",
-        }], 1),
+        (
+            [
+                {
+                    "crm_no": "CRM001",
+                    "contract_no": "HT001",
+                    "customer_name": "客户A",
+                    "detail_id": "DT001",
+                    "product_model": "MC1-80",
+                    "product_series": "MC1",
+                    "product_name": "整机",
+                    "material_no": "MAT001",
+                    "quantity": "2",
+                    "contract_unit_price": "100000",
+                    "confirmed_delivery_date": "2025-03-28 00:00:00",
+                    "delivery_date": "2025-03-29 00:00:00",
+                    "line_total_amount": "200000",
+                    "order_no": "SO001",
+                    "custom_no": "CUS001",
+                    "order_type": "1",
+                    "is_automation_project": "false",
+                    "business_group": "BG",
+                    "sales_person_name": "tester",
+                    "sales_person_job_no": "EMP001",
+                    "order_date": "2025-02-15",
+                    "sales_branch_company": "branch",
+                    "sales_sub_branch": "sub",
+                    "sap_code": "SAP001",
+                    "sap_line_no": "10",
+                    "oa_flow_id": None,
+                    "operator_name": None,
+                    "operator_job_no": None,
+                    "review_comment": None,
+                    "custom_requirement": None,
+                    "delivery_plant": "1000",
+                }
+            ],
+            1,
+        ),
     ]
 
     service = SalesPlanSyncService(db_session, mock_client)
     await service.sync()
     await db_session.commit()
 
-    entity = (await db_session.execute(
-        select(SalesPlanOrderLineSrc).where(SalesPlanOrderLineSrc.sap_code == "SAP001")
-    )).scalar_one()
+    entity = (
+        await db_session.execute(select(SalesPlanOrderLineSrc).where(SalesPlanOrderLineSrc.sap_code == "SAP001"))
+    ).scalar_one()
     assert entity.confirmed_delivery_date is not None
     assert entity.confirmed_delivery_date.strftime("%Y-%m-%d %H:%M:%S") == "2025-03-28 00:00:00"
     assert entity.delivery_date is not None
@@ -331,9 +346,7 @@ async def test_sync_critical_change_with_existing_schedule_triggers_refresh(db_s
     await db_session.commit()
 
     order = (
-        await db_session.execute(
-            select(SalesPlanOrderLineSrc).where(SalesPlanOrderLineSrc.sap_code == "SAP001")
-        )
+        await db_session.execute(select(SalesPlanOrderLineSrc).where(SalesPlanOrderLineSrc.sap_code == "SAP001"))
     ).scalar_one()
     db_session.add(MachineScheduleResult(order_line_id=order.id))
     await db_session.commit()

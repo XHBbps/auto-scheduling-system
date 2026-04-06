@@ -26,11 +26,7 @@ def production_order_trigger_message(*, created: bool) -> str:
 
 
 def bom_trigger_message(*, created: bool) -> str:
-    return (
-        "BOM 手动同步已触发，请稍后查看同步日志。"
-        if created
-        else "BOM 同步任务已在运行中，请查看当前任务日志。"
-    )
+    return "BOM 手动同步已触发，请稍后查看同步日志。" if created else "BOM 同步任务已在运行中，请查看当前任务日志。"
 
 
 def bom_missing_sap_message(*, source: str, reason: str) -> str:

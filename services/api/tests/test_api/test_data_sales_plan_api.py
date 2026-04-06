@@ -1,6 +1,7 @@
-import pytest
 from datetime import datetime
 from decimal import Decimal
+
+import pytest
 
 from app.models.sales_plan import SalesPlanOrderLineSrc
 

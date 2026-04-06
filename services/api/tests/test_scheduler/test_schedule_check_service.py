@@ -1,7 +1,7 @@
+from datetime import date, datetime
+from decimal import Decimal
 
 import pytest
-from decimal import Decimal
-from datetime import datetime, date
 
 from app.models.bom_relation import BomRelationSrc
 from app.models.machine_cycle_baseline import MachineCycleBaseline
@@ -25,7 +25,8 @@ def _machine_bom(material_no: str) -> BomRelationSrc:
 @pytest.mark.asyncio
 async def test_pending_drawing(db_session):
     order = SalesPlanOrderLineSrc(
-        sap_code="SAP001", sap_line_no="10",
+        sap_code="SAP001",
+        sap_line_no="10",
         confirmed_delivery_date=datetime(2026, 9, 1),
         drawing_released=False,
         product_model="MC1-80",
@@ -45,7 +46,8 @@ async def test_pending_drawing(db_session):
 @pytest.mark.asyncio
 async def test_pending_trigger(db_session):
     order = SalesPlanOrderLineSrc(
-        sap_code="SAP002", sap_line_no="10",
+        sap_code="SAP002",
+        sap_line_no="10",
         confirmed_delivery_date=datetime(2026, 12, 1),
         drawing_released=True,
         product_model="MC1-80",
@@ -54,11 +56,16 @@ async def test_pending_trigger(db_session):
     )
     db_session.add(order)
     db_session.add(_machine_bom("MACH-002"))
-    db_session.add(MachineCycleBaseline(
-        machine_model="MC1-80", product_series="MC1",
-        order_qty=Decimal("1"), cycle_days_median=Decimal("90"),
-        sample_count=5, is_active=True,
-    ))
+    db_session.add(
+        MachineCycleBaseline(
+            machine_model="MC1-80",
+            product_series="MC1",
+            order_qty=Decimal("1"),
+            cycle_days_median=Decimal("90"),
+            sample_count=5,
+            is_active=True,
+        )
+    )
     await db_session.commit()
 
     result = await ScheduleCheckService(db_session, today=date(2026, 3, 17)).check(order.id)
@@ -69,7 +76,8 @@ async def test_pending_trigger(db_session):
 @pytest.mark.asyncio
 async def test_schedulable(db_session):
     order = SalesPlanOrderLineSrc(
-        sap_code="SAP003", sap_line_no="10",
+        sap_code="SAP003",
+        sap_line_no="10",
         confirmed_delivery_date=datetime(2026, 6, 1),
         drawing_released=True,
         product_model="MC1-80",
@@ -78,11 +86,16 @@ async def test_schedulable(db_session):
     )
     db_session.add(order)
     db_session.add(_machine_bom("MACH-003"))
-    db_session.add(MachineCycleBaseline(
-        machine_model="MC1-80", product_series="MC1",
-        order_qty=Decimal("1"), cycle_days_median=Decimal("60"),
-        sample_count=5, is_active=True,
-    ))
+    db_session.add(
+        MachineCycleBaseline(
+            machine_model="MC1-80",
+            product_series="MC1",
+            order_qty=Decimal("1"),
+            cycle_days_median=Decimal("60"),
+            sample_count=5,
+            is_active=True,
+        )
+    )
     await db_session.commit()
 
     result = await ScheduleCheckService(db_session, today=date(2026, 3, 17)).check(order.id)
@@ -96,7 +109,8 @@ async def test_schedulable(db_session):
 @pytest.mark.asyncio
 async def test_no_delivery_date(db_session):
     order = SalesPlanOrderLineSrc(
-        sap_code="SAP004", sap_line_no="10",
+        sap_code="SAP004",
+        sap_line_no="10",
         confirmed_delivery_date=None,
         drawing_released=True,
         product_model="MC1-80",
@@ -114,7 +128,8 @@ async def test_no_delivery_date(db_session):
 @pytest.mark.asyncio
 async def test_duplicate_active_baselines_do_not_break_exact_match(db_session):
     order = SalesPlanOrderLineSrc(
-        sap_code="SAP005", sap_line_no="10",
+        sap_code="SAP005",
+        sap_line_no="10",
         confirmed_delivery_date=datetime(2026, 6, 1),
         drawing_released=True,
         product_model="MC2-200",
@@ -123,18 +138,26 @@ async def test_duplicate_active_baselines_do_not_break_exact_match(db_session):
     )
     db_session.add(order)
     db_session.add(_machine_bom("MACH-005"))
-    db_session.add_all([
-        MachineCycleBaseline(
-            machine_model="MC2-200", product_series="old",
-            order_qty=Decimal("1"), cycle_days_median=Decimal("60"),
-            sample_count=1, is_active=True,
-        ),
-        MachineCycleBaseline(
-            machine_model="MC2-200", product_series="new",
-            order_qty=Decimal("1"), cycle_days_median=Decimal("51"),
-            sample_count=18, is_active=True,
-        ),
-    ])
+    db_session.add_all(
+        [
+            MachineCycleBaseline(
+                machine_model="MC2-200",
+                product_series="old",
+                order_qty=Decimal("1"),
+                cycle_days_median=Decimal("60"),
+                sample_count=1,
+                is_active=True,
+            ),
+            MachineCycleBaseline(
+                machine_model="MC2-200",
+                product_series="new",
+                order_qty=Decimal("1"),
+                cycle_days_median=Decimal("51"),
+                sample_count=18,
+                is_active=True,
+            ),
+        ]
+    )
     await db_session.commit()
 
     result = await ScheduleCheckService(db_session, today=date(2026, 3, 17)).check(order.id)

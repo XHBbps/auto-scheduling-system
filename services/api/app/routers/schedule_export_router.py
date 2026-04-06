@@ -1,7 +1,7 @@
+from urllib.parse import quote
+
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
-from typing import Optional
-from urllib.parse import quote
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.auth import CurrentUserIdentity, require_permission
@@ -26,24 +26,26 @@ def _build_content_disposition(filename: str) -> str:
     response_description="导出文件流，支持 xlsx / csv",
 )
 async def export_machine_schedules(
-    export_format: str = Query("xlsx", pattern="^(xlsx|csv)$", description="导出文件格式；xlsx 为 Excel，csv 为文本格式。"),
-    order_line_id: Optional[int] = None,
-    contract_no: Optional[str] = None,
-    customer_name: Optional[str] = None,
-    product_series: Optional[str] = None,
-    product_model: Optional[str] = None,
-    plant: Optional[str] = None,
-    order_no: Optional[str] = None,
-    schedule_status: Optional[str] = None,
-    assembly_name: Optional[str] = None,
-    part_material_no: Optional[str] = None,
-    key_part_name: Optional[str] = None,
-    key_part_material_no: Optional[str] = None,
-    warning_level: Optional[str] = None,
-    date_from: Optional[str] = None,
-    date_to: Optional[str] = None,
-    sort_field: Optional[str] = None,
-    sort_order: Optional[str] = Query(None, pattern="^(asc|desc)$"),
+    export_format: str = Query(
+        "xlsx", pattern="^(xlsx|csv)$", description="导出文件格式；xlsx 为 Excel，csv 为文本格式。"
+    ),
+    order_line_id: int | None = None,
+    contract_no: str | None = None,
+    customer_name: str | None = None,
+    product_series: str | None = None,
+    product_model: str | None = None,
+    plant: str | None = None,
+    order_no: str | None = None,
+    schedule_status: str | None = None,
+    assembly_name: str | None = None,
+    part_material_no: str | None = None,
+    key_part_name: str | None = None,
+    key_part_material_no: str | None = None,
+    warning_level: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    sort_field: str | None = None,
+    sort_order: str | None = Query(None, pattern="^(asc|desc)$"),
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_export_view_permission),
 ):
@@ -82,20 +84,22 @@ async def export_machine_schedules(
     response_description="导出文件流，支持 xlsx / csv",
 )
 async def export_part_schedules(
-    export_format: str = Query("xlsx", pattern="^(xlsx|csv)$", description="导出文件格式；xlsx 为 Excel，csv 为文本格式。"),
-    order_line_id: Optional[int] = None,
-    contract_no: Optional[str] = None,
-    customer_name: Optional[str] = None,
-    product_series: Optional[str] = None,
-    product_model: Optional[str] = None,
-    plant: Optional[str] = None,
-    order_no: Optional[str] = None,
-    schedule_status: Optional[str] = None,
-    warning_level: Optional[str] = None,
-    date_from: Optional[str] = None,
-    date_to: Optional[str] = None,
-    sort_field: Optional[str] = None,
-    sort_order: Optional[str] = Query(None, pattern="^(asc|desc)$"),
+    export_format: str = Query(
+        "xlsx", pattern="^(xlsx|csv)$", description="导出文件格式；xlsx 为 Excel，csv 为文本格式。"
+    ),
+    order_line_id: int | None = None,
+    contract_no: str | None = None,
+    customer_name: str | None = None,
+    product_series: str | None = None,
+    product_model: str | None = None,
+    plant: str | None = None,
+    order_no: str | None = None,
+    schedule_status: str | None = None,
+    warning_level: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    sort_field: str | None = None,
+    sort_order: str | None = Query(None, pattern="^(asc|desc)$"),
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_export_view_permission),
 ):

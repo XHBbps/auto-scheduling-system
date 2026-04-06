@@ -13,8 +13,8 @@ from app.sync.auto_bom_backfill_service import AutoBomBackfillResult, AutoBomBac
 from app.sync.drawing_status_sync_service import DrawingStatusSyncService
 from app.sync.research_data_sync_service import ResearchSyncService
 from app.sync.sales_plan_sync_service import SalesPlanSyncService
-from app.sync.sync_support_utils import SyncResult
 from app.sync.sync_job_message_templates import bom_missing_sap_message
+from app.sync.sync_support_utils import SyncResult
 
 
 @dataclass
@@ -51,9 +51,7 @@ class SyncWorkflowService:
         auto_bom_backfill = await self.run_auto_bom_backfill(
             source="sales_plan_sync",
             reason="sales_plan_or_drawing_updated",
-            order_line_ids=sorted(
-                set(service.get_touched_order_line_ids()) | set(drawing_refresh.updated_ids)
-            ),
+            order_line_ids=sorted(set(service.get_touched_order_line_ids()) | set(drawing_refresh.updated_ids)),
         )
         return SyncWorkflowResult(
             sync_result=result,
@@ -76,9 +74,7 @@ class SyncWorkflowService:
             table_id=table_id,
         )
         result = await service.sync(order_no_filter=order_no_filter, job=job)
-        baseline_rebuild = await self.rebuild_machine_cycle_baselines(
-            service.get_touched_product_models()
-        )
+        baseline_rebuild = await self.rebuild_machine_cycle_baselines(service.get_touched_product_models())
         await service.update_job_message(
             "整机周期基准重建："
             f"{baseline_rebuild.get('groups_processed', 0)}组 / "
@@ -119,9 +115,7 @@ class SyncWorkflowService:
         order_line_ids: list[int] | None = None,
     ) -> AutoBomBackfillResult:
         if not settings.sap_bom_base_url:
-            return AutoBomBackfillResult(
-                message=bom_missing_sap_message(source=source, reason=reason)
-            )
+            return AutoBomBackfillResult(message=bom_missing_sap_message(source=source, reason=reason))
         return await AutoBomBackfillService().run(
             source=source,
             reason=reason,

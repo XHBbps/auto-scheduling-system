@@ -1,7 +1,9 @@
-import pytest
-import httpx
-import respx
 import json
+
+import httpx
+import pytest
+import respx
+
 from app.integration.guandata_client import GuandataClient
 
 
@@ -23,9 +25,7 @@ def client():
 @pytest.mark.asyncio
 async def test_authenticate(client):
     respx.post("https://guandata.example.com/public-api/sign-in").mock(
-        return_value=httpx.Response(200, json={
-            "response": {"token": "tok123", "expireAt": "2099-01-01 00:00:00.000"}
-        })
+        return_value=httpx.Response(200, json={"response": {"token": "tok123", "expireAt": "2099-01-01 00:00:00.000"}})
     )
     token = await client.authenticate()
     assert token == "tok123"
@@ -35,9 +35,7 @@ async def test_authenticate(client):
 @pytest.mark.asyncio
 async def test_fetch_sales_page(client):
     respx.post("https://guandata.example.com/public-api/sign-in").mock(
-        return_value=httpx.Response(200, json={
-            "response": {"token": "tok123", "expireAt": "2099-01-01 00:00:00.000"}
-        })
+        return_value=httpx.Response(200, json={"response": {"token": "tok123", "expireAt": "2099-01-01 00:00:00.000"}})
     )
     # Build a minimal preview row (142 fields, indices 0-141)
     row = [""] * 142
@@ -56,12 +54,15 @@ async def test_fetch_sales_page(client):
     row[71] = "10"
 
     data_route = respx.post("https://guandata.example.com/public-api/data-source/test_ds/data").mock(
-        return_value=httpx.Response(200, json={
-            "response": {
-                "preview": [row],
-                "rowCount": 1,
-            }
-        })
+        return_value=httpx.Response(
+            200,
+            json={
+                "response": {
+                    "preview": [row],
+                    "rowCount": 1,
+                }
+            },
+        )
     )
 
     records, total = await client.fetch_sales_page(
@@ -103,14 +104,10 @@ async def test_fetch_sales_page(client):
 @pytest.mark.asyncio
 async def test_fetch_empty_page(client):
     respx.post("https://guandata.example.com/public-api/sign-in").mock(
-        return_value=httpx.Response(200, json={
-            "response": {"token": "tok123", "expireAt": "2099-01-01 00:00:00.000"}
-        })
+        return_value=httpx.Response(200, json={"response": {"token": "tok123", "expireAt": "2099-01-01 00:00:00.000"}})
     )
     respx.post("https://guandata.example.com/public-api/data-source/test_ds/data").mock(
-        return_value=httpx.Response(200, json={
-            "response": {"preview": [], "rowCount": 0}
-        })
+        return_value=httpx.Response(200, json={"response": {"preview": [], "rowCount": 0}})
     )
     records, total = await client.fetch_sales_page(offset=0, limit=100)
     assert total == 0
@@ -121,9 +118,7 @@ async def test_fetch_empty_page(client):
 @pytest.mark.asyncio
 async def test_authenticate_reuses_string_expire_at_token(client):
     sign_in_route = respx.post("https://guandata.example.com/public-api/sign-in").mock(
-        return_value=httpx.Response(200, json={
-            "response": {"token": "tok123", "expireAt": "2099-01-01 00:00:00.000"}
-        })
+        return_value=httpx.Response(200, json={"response": {"token": "tok123", "expireAt": "2099-01-01 00:00:00.000"}})
     )
     token1 = await client.authenticate()
     token2 = await client.authenticate()
@@ -166,9 +161,7 @@ async def test_authenticate_retries_on_retryable_status(client):
     route = respx.post("https://guandata.example.com/public-api/sign-in").mock(
         side_effect=[
             httpx.Response(503, json={"message": "busy"}),
-            httpx.Response(200, json={
-                "response": {"token": "tok789", "expireAt": "2099-01-01 00:00:00.000"}
-            }),
+            httpx.Response(200, json={"response": {"token": "tok789", "expireAt": "2099-01-01 00:00:00.000"}}),
         ]
     )
 

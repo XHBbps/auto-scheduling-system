@@ -1,8 +1,8 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Optional
+from typing import Any
 
-from sqlalchemy import Index, Numeric, String, Text, UniqueConstraint
+from sqlalchemy import ForeignKey, Index, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, validates
 
@@ -14,54 +14,58 @@ class OrderScheduleSnapshot(TimestampMixin, Base):
     __tablename__ = "order_schedule_snapshot"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    order_line_id: Mapped[int] = mapped_column(nullable=False)
+    order_line_id: Mapped[int] = mapped_column(
+        ForeignKey("sales_plan_order_line_src.id", ondelete="CASCADE"), nullable=False
+    )
 
-    contract_no: Mapped[Optional[str]] = mapped_column(String(100))
-    customer_name: Mapped[Optional[str]] = mapped_column(String(255))
-    product_series: Mapped[Optional[str]] = mapped_column(String(100))
-    product_model: Mapped[Optional[str]] = mapped_column(String(100))
-    product_name: Mapped[Optional[str]] = mapped_column(String(255))
-    material_no: Mapped[Optional[str]] = mapped_column(String(100))
-    plant: Mapped[Optional[str]] = mapped_column(String(50))
-    quantity: Mapped[Optional[Decimal]] = mapped_column(Numeric(18, 4))
-    order_type: Mapped[Optional[str]] = mapped_column(String(50))
-    line_total_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(18, 4))
-    order_date: Mapped[Optional[datetime]] = mapped_column()
-    business_group: Mapped[Optional[str]] = mapped_column(String(100))
-    custom_no: Mapped[Optional[str]] = mapped_column(String(100))
-    sales_person_name: Mapped[Optional[str]] = mapped_column(String(100))
-    sales_branch_company: Mapped[Optional[str]] = mapped_column(String(100))
-    sales_sub_branch: Mapped[Optional[str]] = mapped_column(String(100))
-    order_no: Mapped[Optional[str]] = mapped_column(String(100))
-    sap_code: Mapped[Optional[str]] = mapped_column(String(100))
-    sap_line_no: Mapped[Optional[str]] = mapped_column(String(100))
-    confirmed_delivery_date: Mapped[Optional[datetime]] = mapped_column()
+    contract_no: Mapped[str | None] = mapped_column(String(100))
+    customer_name: Mapped[str | None] = mapped_column(String(255))
+    product_series: Mapped[str | None] = mapped_column(String(100))
+    product_model: Mapped[str | None] = mapped_column(String(100))
+    product_name: Mapped[str | None] = mapped_column(String(255))
+    material_no: Mapped[str | None] = mapped_column(String(100))
+    plant: Mapped[str | None] = mapped_column(String(50))
+    quantity: Mapped[Decimal | None] = mapped_column(Numeric(18, 4))
+    order_type: Mapped[str | None] = mapped_column(String(50))
+    line_total_amount: Mapped[Decimal | None] = mapped_column(Numeric(18, 4))
+    order_date: Mapped[datetime | None] = mapped_column()
+    business_group: Mapped[str | None] = mapped_column(String(100))
+    custom_no: Mapped[str | None] = mapped_column(String(100))
+    sales_person_name: Mapped[str | None] = mapped_column(String(100))
+    sales_branch_company: Mapped[str | None] = mapped_column(String(100))
+    sales_sub_branch: Mapped[str | None] = mapped_column(String(100))
+    order_no: Mapped[str | None] = mapped_column(String(100))
+    sap_code: Mapped[str | None] = mapped_column(String(100))
+    sap_line_no: Mapped[str | None] = mapped_column(String(100))
+    confirmed_delivery_date: Mapped[datetime | None] = mapped_column()
     drawing_released: Mapped[bool] = mapped_column(default=False)
-    drawing_release_date: Mapped[Optional[datetime]] = mapped_column()
-    custom_requirement: Mapped[Optional[str]] = mapped_column(Text)
-    review_comment: Mapped[Optional[str]] = mapped_column(Text)
+    drawing_release_date: Mapped[datetime | None] = mapped_column()
+    custom_requirement: Mapped[str | None] = mapped_column(Text)
+    review_comment: Mapped[str | None] = mapped_column(Text)
 
     schedule_status: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
         comment="pending_delivery/pending_drawing/missing_bom/pending_trigger/schedulable/scheduled/scheduled_stale",
     )
-    status_reason: Mapped[Optional[str]] = mapped_column(String(255))
-    trigger_date: Mapped[Optional[datetime]] = mapped_column()
-    machine_cycle_days: Mapped[Optional[Decimal]] = mapped_column(Numeric(18, 4))
+    status_reason: Mapped[str | None] = mapped_column(String(255))
+    trigger_date: Mapped[datetime | None] = mapped_column()
+    machine_cycle_days: Mapped[Decimal | None] = mapped_column(Numeric(18, 4))
     is_default_cycle: Mapped[bool] = mapped_column(default=False)
 
-    machine_schedule_id: Mapped[Optional[int]] = mapped_column(nullable=True)
-    planned_start_date: Mapped[Optional[datetime]] = mapped_column()
-    planned_end_date: Mapped[Optional[datetime]] = mapped_column()
-    machine_assembly_days: Mapped[Optional[Decimal]] = mapped_column(Numeric(18, 4))
-    warning_level: Mapped[Optional[str]] = mapped_column(String(50))
-    default_flags: Mapped[Optional[dict[str, Any]]] = mapped_column(JSONB)
-    issue_flags: Mapped[Optional[dict[str, Any]]] = mapped_column(JSONB)
+    machine_schedule_id: Mapped[int | None] = mapped_column(
+        ForeignKey("machine_schedule_result.id", ondelete="SET NULL"), nullable=True
+    )
+    planned_start_date: Mapped[datetime | None] = mapped_column()
+    planned_end_date: Mapped[datetime | None] = mapped_column()
+    machine_assembly_days: Mapped[Decimal | None] = mapped_column(Numeric(18, 4))
+    warning_level: Mapped[str | None] = mapped_column(String(50))
+    default_flags: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    issue_flags: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
 
-    last_refresh_source: Mapped[Optional[str]] = mapped_column(String(50))
-    refresh_reason: Mapped[Optional[str]] = mapped_column(String(255))
-    refreshed_at: Mapped[Optional[datetime]] = mapped_column()
+    last_refresh_source: Mapped[str | None] = mapped_column(String(50))
+    refresh_reason: Mapped[str | None] = mapped_column(String(255))
+    refreshed_at: Mapped[datetime | None] = mapped_column()
 
     __table_args__ = (
         UniqueConstraint("order_line_id", name="uk_order_schedule_snapshot_order_line_id"),

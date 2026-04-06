@@ -32,27 +32,33 @@ def build_observability_summary(
 
     alerts: list[dict[str, str]] = []
     if known_order_count > 0 and total_snapshots == 0:
-        alerts.append({
-            "level": "critical",
-            "code": "snapshot_empty",
-            "message": "Known orders exist but snapshot table is empty.",
-        })
+        alerts.append(
+            {
+                "level": "critical",
+                "code": "snapshot_empty",
+                "message": "Known orders exist but snapshot table is empty.",
+            }
+        )
     elif total_snapshots < known_order_count:
-        alerts.append({
-            "level": "warning",
-            "code": "snapshot_coverage_gap",
-            "message": f"Snapshot coverage is incomplete ({total_snapshots}/{known_order_count}).",
-        })
+        alerts.append(
+            {
+                "level": "warning",
+                "code": "snapshot_coverage_gap",
+                "message": f"Snapshot coverage is incomplete ({total_snapshots}/{known_order_count}).",
+            }
+        )
 
     if refresh_age_minutes is not None and refresh_age_minutes > warn_refresh_age_minutes:
-        alerts.append({
-            "level": "warning",
-            "code": "snapshot_refresh_age_high",
-            "message": (
-                f"Latest snapshot refresh age is {refresh_age_minutes} minutes, "
-                f"above threshold {warn_refresh_age_minutes}."
-            ),
-        })
+        alerts.append(
+            {
+                "level": "warning",
+                "code": "snapshot_refresh_age_high",
+                "message": (
+                    f"Latest snapshot refresh age is {refresh_age_minutes} minutes, "
+                    f"above threshold {warn_refresh_age_minutes}."
+                ),
+            }
+        )
 
     health_status = "healthy"
     if any(alert["level"] == "critical" for alert in alerts):
@@ -100,17 +106,19 @@ def record_runtime_observation(
     error: str | None = None,
 ) -> None:
     finished_at = utc_now()
-    _SNAPSHOT_RUNTIME_OBSERVATIONS.appendleft({
-        "operation": operation,
-        "source": source,
-        "reason": reason,
-        "started_at": started_at,
-        "finished_at": finished_at,
-        "duration_ms": duration_ms,
-        "success": success,
-        "summary": summary or {},
-        "error": error,
-    })
+    _SNAPSHOT_RUNTIME_OBSERVATIONS.appendleft(
+        {
+            "operation": operation,
+            "source": source,
+            "reason": reason,
+            "started_at": started_at,
+            "finished_at": finished_at,
+            "duration_ms": duration_ms,
+            "success": success,
+            "summary": summary or {},
+            "error": error,
+        }
+    )
 
     log_level = logging.INFO if success else logging.ERROR
     logger.log(

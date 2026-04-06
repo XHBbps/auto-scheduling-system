@@ -1,13 +1,14 @@
 import logging
+from collections.abc import Sequence
 from decimal import Decimal
-from typing import Any, Sequence
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.text_parse_utils import extract_part_type
+from app.models.bom_relation import BomRelationSrc
 from app.models.part_cycle_baseline import PartCycleBaseline
 from app.repository.bom_relation_repo import BomRelationRepo
-from app.models.bom_relation import BomRelationSrc
 from app.repository.part_cycle_baseline_repo import PartCycleBaselineRepo
 
 logger = logging.getLogger(__name__)
@@ -93,17 +94,19 @@ class KeyPartIdentifyService:
                     *path_key_segments,
                     str(child.id or f"{parent_material_no}->{child_material_no}"),
                 ]
-                next_visited_materials = { *visited_materials, child_material_no }
+                next_visited_materials = {*visited_materials, child_material_no}
 
                 if child.is_self_made:
-                    results.append({
-                        "row": child,
-                        "parent_material_no": parent_material_no or None,
-                        "parent_name": parent_name or None,
-                        "node_level": depth,
-                        "bom_path": " / ".join(next_path_segments),
-                        "bom_path_key": ">".join(next_path_key_segments),
-                    })
+                    results.append(
+                        {
+                            "row": child,
+                            "parent_material_no": parent_material_no or None,
+                            "parent_name": parent_name or None,
+                            "node_level": depth,
+                            "bom_path": " / ".join(next_path_segments),
+                            "bom_path_key": ">".join(next_path_key_segments),
+                        }
+                    )
 
                 walk(
                     child_material_no,
@@ -133,9 +136,17 @@ class KeyPartIdentifyService:
         assembly_name: str,
         bom_rows: Sequence[BomRelationSrc] | None = None,
     ) -> list[dict[str, Any]]:
-        rows = list(bom_rows) if bom_rows is not None else list(
-            await self.bom_repo.find_by_machine(machine_material_no, plant)
+        rows = (
+            list(bom_rows)
+            if bom_rows is not None
+            else list(await self.bom_repo.find_by_machine(machine_material_no, plant))
         )
+        if len(rows) > 5000:
+            logger.warning(
+                "Large BOM tree loaded for %s: %d rows. Consider optimizing for very large BOMs.",
+                machine_material_no,
+                len(rows),
+            )
         return self._collect_recursive_self_made_parts_from_rows(
             assembly_bom_component_no=assembly_bom_component_no,
             assembly_name=assembly_name,
@@ -151,6 +162,12 @@ class KeyPartIdentifyService:
         if not assemblies:
             return {}
         rows = await self.bom_repo.find_by_machine(machine_material_no, plant)
+        if len(rows) > 5000:
+            logger.warning(
+                "Large BOM tree loaded for %s: %d rows. Consider optimizing for very large BOMs.",
+                machine_material_no,
+                len(rows),
+            )
         grouped: dict[str, list[dict[str, Any]]] = {}
         for assembly in assemblies:
             assembly_component_no = (assembly.get("bom_component_no") or "").strip()
@@ -315,15 +332,11 @@ class KeyPartIdentifyService:
 
         part_type = extract_part_type(desc or "")
         if part_type:
-            baseline = await self.baseline_repo.find_by_model_and_part_type(
-                machine_model, part_type, plant
-            )
+            baseline = await self.baseline_repo.find_by_model_and_part_type(machine_model, part_type, plant)
             if baseline:
                 return baseline.cycle_days, False, "part_type_exact"
 
-            baseline = await self.baseline_repo.find_by_model_and_desc_prefix(
-                machine_model, part_type, plant
-            )
+            baseline = await self.baseline_repo.find_by_model_and_desc_prefix(machine_model, part_type, plant)
             if baseline:
                 return baseline.cycle_days, False, "part_type_prefix"
 

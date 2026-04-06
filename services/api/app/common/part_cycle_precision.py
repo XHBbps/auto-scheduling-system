@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
-_CYCLE_DAYS_QUANT = Decimal('1')
-_UNIT_CYCLE_DAYS_QUANT = Decimal('0.1')
+_CYCLE_DAYS_QUANT = Decimal("1")
+_UNIT_CYCLE_DAYS_QUANT = Decimal("0.1")
 
 
 def _to_decimal(value: Decimal | int | float | str) -> Decimal:
@@ -23,8 +23,8 @@ def normalize_part_unit_cycle_days(value: Decimal | int | float | str) -> Decima
 
 def normalize_part_cycle_payload(data: dict[str, Any]) -> dict[str, Any]:
     normalized = dict(data)
-    if normalized.get('cycle_days') is not None:
-        normalized['cycle_days'] = normalize_part_cycle_days(normalized['cycle_days'])
-    if normalized.get('unit_cycle_days') is not None:
-        normalized['unit_cycle_days'] = normalize_part_unit_cycle_days(normalized['unit_cycle_days'])
+    if normalized.get("cycle_days") is not None:
+        normalized["cycle_days"] = normalize_part_cycle_days(normalized["cycle_days"])
+    if normalized.get("unit_cycle_days") is not None:
+        normalized["unit_cycle_days"] = normalize_part_unit_cycle_days(normalized["unit_cycle_days"])
     return normalized

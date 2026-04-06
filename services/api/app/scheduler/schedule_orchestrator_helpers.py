@@ -205,7 +205,9 @@ def build_final_assembly_time_default_issue_payload(machine_schedule: Any) -> di
     }
 
 
-def build_part_assembly_time_default_issue_payload(machine_schedule: Any, assembly_defaults: list[str]) -> dict[str, Any]:
+def build_part_assembly_time_default_issue_payload(
+    machine_schedule: Any, assembly_defaults: list[str]
+) -> dict[str, Any]:
     return {
         "issue_type": "装配时长基准缺失",
         "issue_level": "medium",

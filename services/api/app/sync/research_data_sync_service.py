@@ -1,4 +1,3 @@
-
 import logging
 from datetime import datetime
 from decimal import Decimal
@@ -77,7 +76,7 @@ class ResearchSyncService:
 
         while True:
             try:
-                items, has_more, page_token, total = await self.client.search_records(
+                items, has_more, page_token, _total = await self.client.search_records(
                     app_token=self.app_token,
                     table_id=self.table_id,
                     page_token=page_token if page_token else None,

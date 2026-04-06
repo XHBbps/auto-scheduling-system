@@ -1,6 +1,7 @@
+from collections.abc import Sequence
 from datetime import date
-from typing import Sequence
-from sqlalchemy import select, and_
+
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.work_calendar import WorkCalendar
@@ -36,14 +37,19 @@ class WorkCalendarRepo(BaseRepository[WorkCalendar]):
 
     async def get_by_month(self, year: int, month: int) -> Sequence[WorkCalendar]:
         from calendar import monthrange
+
         _, last_day = monthrange(year, month)
         start = date(year, month, 1)
         end = date(year, month, last_day)
-        stmt = select(WorkCalendar).where(
-            and_(
-                WorkCalendar.calendar_date >= start,
-                WorkCalendar.calendar_date <= end,
+        stmt = (
+            select(WorkCalendar)
+            .where(
+                and_(
+                    WorkCalendar.calendar_date >= start,
+                    WorkCalendar.calendar_date <= end,
+                )
             )
-        ).order_by(WorkCalendar.calendar_date)
+            .order_by(WorkCalendar.calendar_date)
+        )
         result = await self.session.execute(stmt)
         return result.scalars().all()

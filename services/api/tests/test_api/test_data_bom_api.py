@@ -1,6 +1,7 @@
-import pytest
-from decimal import Decimal
 from datetime import datetime
+from decimal import Decimal
+
+import pytest
 
 from app.models.bom_relation import BomRelationSrc
 
@@ -295,7 +296,6 @@ async def test_get_bom_tree_children(app_client, db_session):
     assert body["data"]["items"][0]["has_children"] is True
     assert body["data"]["items"][0]["children_loaded"] is False
     assert body["data"]["items"][0]["children"] == []
-
 
 
 @pytest.mark.asyncio

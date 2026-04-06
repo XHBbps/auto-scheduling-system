@@ -224,14 +224,10 @@ async def test_refresh_one_marks_scheduled_result_stale_when_source_changes(db_s
     await db_session.commit()
 
     machine_schedule = (
-        await db_session.execute(
-            select(MachineScheduleResult).where(MachineScheduleResult.order_line_id == order.id)
-        )
+        await db_session.execute(select(MachineScheduleResult).where(MachineScheduleResult.order_line_id == order.id))
     ).scalar_one()
     stored_snapshot = (
-        await db_session.execute(
-            select(OrderScheduleSnapshot).where(OrderScheduleSnapshot.order_line_id == order.id)
-        )
+        await db_session.execute(select(OrderScheduleSnapshot).where(OrderScheduleSnapshot.order_line_id == order.id))
     ).scalar_one()
 
     assert machine_schedule is not None
@@ -416,12 +412,16 @@ async def test_refresh_batch_uses_prefetched_path_without_refresh_one(monkeypatc
     await db_session.commit()
 
     snapshots = (
-        await db_session.execute(
-            select(OrderScheduleSnapshot).where(
-                OrderScheduleSnapshot.order_line_id.in_([scheduled_order.id, dynamic_order.id])
+        (
+            await db_session.execute(
+                select(OrderScheduleSnapshot).where(
+                    OrderScheduleSnapshot.order_line_id.in_([scheduled_order.id, dynamic_order.id])
+                )
             )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     status_map = {snapshot.order_line_id: snapshot.schedule_status for snapshot in snapshots}
 
     assert result["total"] == 2
@@ -635,10 +635,10 @@ async def test_fast_seed_all_processes_known_ids_in_batches(monkeypatch, db_sess
     await db_session.commit()
 
     snapshots = (
-        await db_session.execute(
-            select(OrderScheduleSnapshot).order_by(OrderScheduleSnapshot.order_line_id.asc())
-        )
-    ).scalars().all()
+        (await db_session.execute(select(OrderScheduleSnapshot).order_by(OrderScheduleSnapshot.order_line_id.asc())))
+        .scalars()
+        .all()
+    )
 
     assert seeded == 3
     assert [snapshot.order_line_id for snapshot in snapshots] == [order.id for order in orders]

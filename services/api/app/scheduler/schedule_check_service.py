@@ -82,8 +82,7 @@ class ScheduleCheckService:
             )
             if bom_material_pairs is not None or bom_materials is not None
             else bool(
-                order.material_no
-                and await self.bom_repo.has_machine_bom(order.material_no, order.delivery_plant)
+                order.material_no and await self.bom_repo.has_machine_bom(order.material_no, order.delivery_plant)
             )
         )
         if not has_bom:
@@ -174,11 +173,9 @@ class ScheduleCheckService:
 
     async def _get_calendar(self, delivery_date: datetime | date) -> dict[date, bool]:
         """Load work calendar covering a reasonable range."""
-        if isinstance(delivery_date, datetime):
-            end = delivery_date.date()
-        else:
-            end = delivery_date
+        end = delivery_date.date() if isinstance(delivery_date, datetime) else delivery_date
         from datetime import timedelta
+
         start = self.today - timedelta(days=30)
         end = end + timedelta(days=30)
         return await self.calendar_repo.get_calendar_map(start, end)

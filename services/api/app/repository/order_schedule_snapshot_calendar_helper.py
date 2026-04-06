@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Any, Sequence
+from typing import Any
 
 from sqlalchemy import and_, case, func, literal, select, union_all
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -65,11 +66,8 @@ class OrderScheduleSnapshotCalendarHelper:
             conditions.append(OrderScheduleSnapshot.schedule_status != "scheduled")
         elif schedule_bucket == "risk":
             conditions.append(
-                (
-                    OrderScheduleSnapshot.schedule_status != "scheduled"
-                ) | (
-                    OrderScheduleSnapshot.warning_level == "abnormal"
-                )
+                (OrderScheduleSnapshot.schedule_status != "scheduled")
+                | (OrderScheduleSnapshot.warning_level == "abnormal")
             )
         if warning_level:
             conditions.append(OrderScheduleSnapshot.warning_level == warning_level)
@@ -92,12 +90,10 @@ class OrderScheduleSnapshotCalendarHelper:
         )
         stmt = select(
             func.count(OrderScheduleSnapshot.id).label("delivery_count"),
-            func.sum(
-                case((OrderScheduleSnapshot.schedule_status != "scheduled", 1), else_=0)
-            ).label("unscheduled_count"),
-            func.sum(
-                case((OrderScheduleSnapshot.warning_level == "abnormal", 1), else_=0)
-            ).label("abnormal_count"),
+            func.sum(case((OrderScheduleSnapshot.schedule_status != "scheduled", 1), else_=0)).label(
+                "unscheduled_count"
+            ),
+            func.sum(case((OrderScheduleSnapshot.warning_level == "abnormal", 1), else_=0)).label("abnormal_count"),
         ).where(base_conditions)
         delivery_count, unscheduled_count, abnormal_count = (await self.session.execute(stmt)).one()
         return {
@@ -130,12 +126,12 @@ class OrderScheduleSnapshotCalendarHelper:
                 select(
                     literal(bucket).label("bucket"),
                     func.count(OrderScheduleSnapshot.id).label("delivery_count"),
-                    func.sum(
-                        case((OrderScheduleSnapshot.schedule_status != "scheduled", 1), else_=0)
-                    ).label("unscheduled_count"),
-                    func.sum(
-                        case((OrderScheduleSnapshot.warning_level == "abnormal", 1), else_=0)
-                    ).label("abnormal_count"),
+                    func.sum(case((OrderScheduleSnapshot.schedule_status != "scheduled", 1), else_=0)).label(
+                        "unscheduled_count"
+                    ),
+                    func.sum(case((OrderScheduleSnapshot.warning_level == "abnormal", 1), else_=0)).label(
+                        "abnormal_count"
+                    ),
                 ).where(
                     and_(
                         column.isnot(None),
@@ -328,9 +324,7 @@ class OrderScheduleSnapshotCalendarHelper:
         )
         stmt = (
             select(OrderScheduleSnapshot)
-            .where(
-                delivery_condition | trigger_condition | planned_start_condition
-            )
+            .where(delivery_condition | trigger_condition | planned_start_condition)
             .order_by(
                 OrderScheduleSnapshot.confirmed_delivery_date.asc().nullslast(),
                 OrderScheduleSnapshot.planned_start_date.asc().nullslast(),

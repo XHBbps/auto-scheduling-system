@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import datetime, timezone
 import hashlib
 import re
 import secrets
+from dataclasses import dataclass
+from datetime import UTC, datetime
 
 from app.common.exceptions import BizException, ErrorCode
 from app.config import settings
@@ -46,12 +46,18 @@ SYSTEM_PERMISSION_SEEDS: tuple[PermissionSeed, ...] = (
     PermissionSeed("permission.view", "查看权限骨架", "系统管理", "查看系统内置权限目录与角色权限占位信息。", 50),
     PermissionSeed("sync.manage", "执行数据同步", "同步配置", "触发数据同步并查看同步链路信息。", 60),
     PermissionSeed("sync.log.view", "查看同步日志", "同步配置", "查看同步日志、调度状态和观测摘要。", 70),
-    PermissionSeed("schedule.view", "查看排产数据", "排产控制", "查看排产总览、整机排产列表、零件排产列表与排产详情。", 80),
+    PermissionSeed(
+        "schedule.view", "查看排产数据", "排产控制", "查看排产总览、整机排产列表、零件排产列表与排产详情。", 80
+    ),
     PermissionSeed("schedule.manage", "执行排产任务", "排产控制", "触发一键排产、单订单排产与快照刷新。", 90),
     PermissionSeed("issue.view", "查看异常", "排产控制", "查看排产异常列表、异常筛选和关联订单快照信息。", 100),
     PermissionSeed("issue.manage", "处理异常", "排产控制", "处理排产异常记录，如解决或忽略异常。", 110),
-    PermissionSeed("settings.manage", "维护基础参数", "基础参数", "维护装配时长、整机周期、零件周期和工作日历等基础参数。", 120),
-    PermissionSeed("data_source.view", "查看外源数据", "数据查看", "查看销售计划、BOM、生产订单和整机周期历史等外源数据。", 130),
+    PermissionSeed(
+        "settings.manage", "维护基础参数", "基础参数", "维护装配时长、整机周期、零件周期和工作日历等基础参数。", 120
+    ),
+    PermissionSeed(
+        "data_source.view", "查看外源数据", "数据查看", "查看销售计划、BOM、生产订单和整机周期历史等外源数据。", 130
+    ),
     PermissionSeed("export.view", "导出排产结果", "数据查看", "导出整机排产和零件排产结果文件。", 140),
 )
 
@@ -124,7 +130,9 @@ def serialize_role_payload(
         "is_active": role.is_active,
         "is_system": role.is_system,
         "assigned_user_count": assigned_user_count,
-        "permission_count": permission_count if permission_count is not None else len(
+        "permission_count": permission_count
+        if permission_count is not None
+        else len(
             [
                 link
                 for link in getattr(role, "permission_links", [])
@@ -146,8 +154,12 @@ def serialize_permission_payload(permission: Permission) -> dict[str, object]:
         "sort_order": permission.sort_order,
         "is_active": permission.is_active,
         "is_system": permission.is_system,
-        "created_at": permission.created_at.isoformat().replace("+00:00", "Z") if getattr(permission, "created_at", None) else None,
-        "updated_at": permission.updated_at.isoformat().replace("+00:00", "Z") if getattr(permission, "updated_at", None) else None,
+        "created_at": permission.created_at.isoformat().replace("+00:00", "Z")
+        if getattr(permission, "created_at", None)
+        else None,
+        "updated_at": permission.updated_at.isoformat().replace("+00:00", "Z")
+        if getattr(permission, "updated_at", None)
+        else None,
     }
 
 
@@ -225,10 +237,14 @@ async def ensure_default_role_permissions(session, role: Role, permissions: list
         for link in getattr(role, "permission_links", [])
         if getattr(link, "permission_id", None) is not None
     }
-    missing_permission_ids = [permission.id for permission in permissions if permission.id not in current_permission_ids]
+    missing_permission_ids = [
+        permission.id for permission in permissions if permission.id not in current_permission_ids
+    ]
     if not missing_permission_ids:
         return
-    session.add_all([RolePermission(role_id=role.id, permission_id=permission_id) for permission_id in missing_permission_ids])
+    session.add_all(
+        [RolePermission(role_id=role.id, permission_id=permission_id) for permission_id in missing_permission_ids]
+    )
     await session.flush()
 
 
@@ -277,7 +293,9 @@ async def ensure_identity_seeded(session) -> None:
     await session.commit()
 
 
-async def ensure_permissions_exist(session, permission_codes: list[str], *, active_only: bool = True) -> list[Permission]:
+async def ensure_permissions_exist(
+    session, permission_codes: list[str], *, active_only: bool = True
+) -> list[Permission]:
     normalized_codes = sorted({code.strip().lower() for code in permission_codes if code and code.strip()})
     if not normalized_codes:
         return []
@@ -285,11 +303,11 @@ async def ensure_permissions_exist(session, permission_codes: list[str], *, acti
     permission_map = {permission.code: permission for permission in permissions}
     missing = [code for code in normalized_codes if code not in permission_map]
     if missing:
-        raise BizException(ErrorCode.BIZ_VALIDATION_FAILED, f"权限不存在：{', ' .join(missing)}")
+        raise BizException(ErrorCode.BIZ_VALIDATION_FAILED, f"权限不存在：{', '.join(missing)}")
     if active_only:
         inactive = [code for code, permission in permission_map.items() if not permission.is_active]
         if inactive:
-            raise BizException(ErrorCode.BIZ_VALIDATION_FAILED, f"权限已停用，无法分配：{', ' .join(sorted(inactive))}")
+            raise BizException(ErrorCode.BIZ_VALIDATION_FAILED, f"权限已停用，无法分配：{', '.join(sorted(inactive))}")
     return [permission_map[code] for code in normalized_codes]
 
 
@@ -318,4 +336,4 @@ def ensure_naive_utc(value: datetime | None) -> datetime | None:
         return None
     if value.tzinfo is None:
         return value
-    return value.astimezone(timezone.utc).replace(tzinfo=None)
+    return value.astimezone(UTC).replace(tzinfo=None)

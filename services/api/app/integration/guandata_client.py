@@ -7,6 +7,7 @@ from typing import Any
 import httpx
 
 from app.integration.http_client import ExternalHttpClient
+
 logger = logging.getLogger(__name__)
 
 # preview index → system field name
@@ -57,6 +58,7 @@ def _parse_expire_at(value: Any) -> float:
         return ts
     if isinstance(value, str):
         from zoneinfo import ZoneInfo
+
         cst = ZoneInfo("Asia/Shanghai")
         for fmt in ("%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S"):
             try:

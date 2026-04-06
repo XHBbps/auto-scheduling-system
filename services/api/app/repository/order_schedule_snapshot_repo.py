@@ -1,18 +1,18 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Sequence
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Any, Sequence
+from typing import Any
 
 from sqlalchemy import and_, case, delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.enums import ScheduleStatus
 from app.common.query_sort_utils import build_sort_expression, resolve_order_by
-from app.repository.order_schedule_snapshot_aggregate_helper import OrderScheduleSnapshotAggregateHelper
 from app.models.machine_schedule_result import MachineScheduleResult
 from app.models.order_schedule_snapshot import OrderScheduleSnapshot
-from app.repository.order_schedule_snapshot_calendar_helper import OrderScheduleSnapshotCalendarHelper
 from app.repository.base import BaseRepository
+from app.repository.order_schedule_snapshot_aggregate_helper import OrderScheduleSnapshotAggregateHelper
+from app.repository.order_schedule_snapshot_calendar_helper import OrderScheduleSnapshotCalendarHelper
 
 
 class OrderScheduleSnapshotRepo(BaseRepository[OrderScheduleSnapshot]):
@@ -103,10 +103,7 @@ class OrderScheduleSnapshotRepo(BaseRepository[OrderScheduleSnapshot]):
     ) -> Sequence[OrderScheduleSnapshot]:
         if not order_line_ids:
             return []
-        stmt = (
-            select(OrderScheduleSnapshot)
-            .where(OrderScheduleSnapshot.order_line_id.in_(order_line_ids))
-        )
+        stmt = select(OrderScheduleSnapshot).where(OrderScheduleSnapshot.order_line_id.in_(order_line_ids))
         result = await self.session.execute(stmt)
         return result.scalars().all()
 
@@ -221,12 +218,16 @@ class OrderScheduleSnapshotRepo(BaseRepository[OrderScheduleSnapshot]):
 
         total = (await self.session.execute(count_base)).scalar_one()
         sort_expression = self._build_sort_expression(sort_field, sort_order)
-        stmt = base.order_by(
-            *resolve_order_by(
-                sort_expression=sort_expression,
-                default_order_by=self._default_order_by(),
+        stmt = (
+            base.order_by(
+                *resolve_order_by(
+                    sort_expression=sort_expression,
+                    default_order_by=self._default_order_by(),
+                )
             )
-        ).offset((page_no - 1) * page_size).limit(page_size)
+            .offset((page_no - 1) * page_size)
+            .limit(page_size)
+        )
         items = (await self.session.execute(stmt)).scalars().all()
         return items, total
 
@@ -352,10 +353,7 @@ class OrderScheduleSnapshotRepo(BaseRepository[OrderScheduleSnapshot]):
         return OrderScheduleSnapshotAggregateHelper.known_order_line_ids_subquery()
 
     async def list_planned_end_dates(self) -> list[datetime]:
-        stmt = (
-            select(OrderScheduleSnapshot.planned_end_date)
-            .where(OrderScheduleSnapshot.planned_end_date.isnot(None))
-        )
+        stmt = select(OrderScheduleSnapshot.planned_end_date).where(OrderScheduleSnapshot.planned_end_date.isnot(None))
         result = await self.session.execute(stmt)
         return [value for value in result.scalars().all() if value]
 
@@ -380,7 +378,6 @@ class OrderScheduleSnapshotRepo(BaseRepository[OrderScheduleSnapshot]):
         result = await self.session.execute(stmt)
         return result.scalars().all()
 
-
     async def list_abnormal_orders(self, limit: int = 50) -> Sequence[OrderScheduleSnapshot]:
         stmt = (
             select(OrderScheduleSnapshot)
@@ -393,6 +390,7 @@ class OrderScheduleSnapshotRepo(BaseRepository[OrderScheduleSnapshot]):
         )
         result = await self.session.execute(stmt)
         return result.scalars().all()
+
     @staticmethod
     def _date_window(start_date: date, end_date: date) -> tuple[datetime, datetime]:
         return OrderScheduleSnapshotCalendarHelper.date_window(start_date, end_date)

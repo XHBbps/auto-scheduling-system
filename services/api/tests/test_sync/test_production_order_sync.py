@@ -1,12 +1,14 @@
-import pytest
 from unittest.mock import AsyncMock
 
-from app.sync.production_order_sync_service import ProductionOrderSyncService
+import pytest
+
 from app.repository.production_order_repo import ProductionOrderRepo
+from app.sync.production_order_sync_service import ProductionOrderSyncService
 
 
-def _make_po_record(order_no="PO001", material_no="MAT001", status="已完工",
-                     start_ms=1711900800000, finish_ms=1713715200000):
+def _make_po_record(
+    order_no="PO001", material_no="MAT001", status="已完工", start_ms=1711900800000, finish_ms=1713715200000
+):
     return {
         "record_id": "rec1",
         "fields": {
@@ -23,16 +25,14 @@ def _make_po_record(order_no="PO001", material_no="MAT001", status="已完工",
             "销售订单号": [{"text": "SO001"}],
             "创建时间": 1711900800000,
             "最后更新时间": 1713715200000,
-        }
+        },
     }
 
 
 @pytest.mark.asyncio
 async def test_sync_inserts_record(db_session):
     mock_client = AsyncMock()
-    mock_client.search_records.return_value = (
-        [_make_po_record()], False, "", 1
-    )
+    mock_client.search_records.return_value = ([_make_po_record()], False, "", 1)
 
     service = ProductionOrderSyncService(
         session=db_session,
@@ -52,9 +52,7 @@ async def test_sync_inserts_record(db_session):
 @pytest.mark.asyncio
 async def test_sync_upserts_duplicate(db_session):
     mock_client = AsyncMock()
-    mock_client.search_records.return_value = (
-        [_make_po_record(), _make_po_record()], False, "", 2
-    )
+    mock_client.search_records.return_value = ([_make_po_record(), _make_po_record()], False, "", 2)
 
     service = ProductionOrderSyncService(
         session=db_session,

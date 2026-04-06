@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, Query
-from typing import Optional
-from sqlalchemy import select, and_, desc, func
+from sqlalchemy import and_, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.auth import CurrentUserIdentity, require_permission
@@ -23,14 +22,14 @@ require_data_source_view_permission = require_permission("data_source.view")
     response_model=ApiResponse[PageResult[MachineCycleHistoryItemResponse]],
 )
 async def list_machine_cycle_history(
-    machine_model: Optional[str] = None,
-    product_series: Optional[str] = None,
-    contract_no: Optional[str] = None,
-    order_no: Optional[str] = None,
+    machine_model: str | None = None,
+    product_series: str | None = None,
+    contract_no: str | None = None,
+    order_no: str | None = None,
     page_no: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    sort_field: Optional[str] = None,
-    sort_order: Optional[str] = None,
+    sort_field: str | None = None,
+    sort_order: str | None = None,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_data_source_view_permission),
 ):
@@ -80,26 +79,28 @@ async def list_machine_cycle_history(
     )
     items = (await session.execute(stmt)).scalars().all()
 
-    return ApiResponse.ok(data={
-        "total": total,
-        "page_no": page_no,
-        "page_size": page_size,
-        "items": [
-            {
-                "id": i.id,
-                "detail_id": i.detail_id,
-                "machine_model": i.machine_model,
-                "product_series": i.product_series,
-                "order_qty": float(i.order_qty) if i.order_qty else None,
-                "drawing_release_date": i.drawing_release_date.isoformat() if i.drawing_release_date else None,
-                "inspection_date": i.inspection_date.isoformat() if i.inspection_date else None,
-                "customer_name": i.customer_name,
-                "contract_no": i.contract_no,
-                "order_no": i.order_no,
-                "order_type": i.order_type,
-                "cycle_days": float(i.cycle_days) if i.cycle_days else None,
-                "created_at": i.created_at.isoformat() if i.created_at else None,
-            }
-            for i in items
-        ],
-    })
+    return ApiResponse.ok(
+        data={
+            "total": total,
+            "page_no": page_no,
+            "page_size": page_size,
+            "items": [
+                {
+                    "id": i.id,
+                    "detail_id": i.detail_id,
+                    "machine_model": i.machine_model,
+                    "product_series": i.product_series,
+                    "order_qty": float(i.order_qty) if i.order_qty else None,
+                    "drawing_release_date": i.drawing_release_date.isoformat() if i.drawing_release_date else None,
+                    "inspection_date": i.inspection_date.isoformat() if i.inspection_date else None,
+                    "customer_name": i.customer_name,
+                    "contract_no": i.contract_no,
+                    "order_no": i.order_no,
+                    "order_type": i.order_type,
+                    "cycle_days": float(i.cycle_days) if i.cycle_days else None,
+                    "created_at": i.created_at.isoformat() if i.created_at else None,
+                }
+                for i in items
+            ],
+        }
+    )

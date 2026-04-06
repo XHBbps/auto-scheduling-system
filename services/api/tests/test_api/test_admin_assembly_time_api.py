@@ -1,6 +1,7 @@
-import pytest
 from datetime import datetime
 from decimal import Decimal
+
+import pytest
 from sqlalchemy import select
 
 from app.models.assembly_time import AssemblyTimeBaseline
@@ -22,12 +23,15 @@ async def test_list_assembly_times_empty(app_client):
 
 @pytest.mark.asyncio
 async def test_save_and_list_assembly_time(app_client):
-    resp = await app_client.post("/api/admin/assembly-times", json={
-        "machine_model": "MC1-80",
-        "assembly_name": "机身",
-        "assembly_time_days": 2,
-        "production_sequence": 1,
-    })
+    resp = await app_client.post(
+        "/api/admin/assembly-times",
+        json={
+            "machine_model": "MC1-80",
+            "assembly_name": "机身",
+            "assembly_time_days": 2,
+            "production_sequence": 1,
+        },
+    )
     body = resp.json()
     assert body["code"] == 0
     assert body["data"]["id"] is not None
@@ -42,19 +46,25 @@ async def test_save_and_list_assembly_time(app_client):
 @pytest.mark.asyncio
 async def test_update_existing_assembly_time(app_client):
     # create
-    await app_client.post("/api/admin/assembly-times", json={
-        "machine_model": "MC2-100",
-        "assembly_name": "传动",
-        "assembly_time_days": 1,
-        "production_sequence": 2,
-    })
+    await app_client.post(
+        "/api/admin/assembly-times",
+        json={
+            "machine_model": "MC2-100",
+            "assembly_name": "传动",
+            "assembly_time_days": 1,
+            "production_sequence": 2,
+        },
+    )
     # update
-    resp = await app_client.post("/api/admin/assembly-times", json={
-        "machine_model": "MC2-100",
-        "assembly_name": "传动",
-        "assembly_time_days": 3,
-        "production_sequence": 2,
-    })
+    resp = await app_client.post(
+        "/api/admin/assembly-times",
+        json={
+            "machine_model": "MC2-100",
+            "assembly_name": "传动",
+            "assembly_time_days": 3,
+            "production_sequence": 2,
+        },
+    )
     body = resp.json()
     assert body["code"] == 0
 
@@ -149,9 +159,7 @@ async def test_save_assembly_time_does_not_mark_scheduled_order_stale(app_client
     body = resp.json()
 
     snapshot = (
-        await db_session.execute(
-            select(OrderScheduleSnapshot).where(OrderScheduleSnapshot.order_line_id == order.id)
-        )
+        await db_session.execute(select(OrderScheduleSnapshot).where(OrderScheduleSnapshot.order_line_id == order.id))
     ).scalar_one()
 
     assert body["code"] == 0
@@ -160,152 +168,194 @@ async def test_save_assembly_time_does_not_mark_scheduled_order_stale(app_client
 
 @pytest.mark.asyncio
 async def test_save_final_assembly_forces_sequence_to_last_sub_assembly_plus_one(app_client):
-    await app_client.post('/api/admin/assembly-times', json={
-        'machine_model': 'JH21-80',
-        'assembly_name': '机身',
-        'assembly_time_days': 1,
-        'production_sequence': 1,
-        'is_final_assembly': False,
-    })
-    await app_client.post('/api/admin/assembly-times', json={
-        'machine_model': 'JH21-80',
-        'assembly_name': '传动',
-        'assembly_time_days': 1,
-        'production_sequence': 2,
-        'is_final_assembly': False,
-    })
-    await app_client.post('/api/admin/assembly-times', json={
-        'machine_model': 'JH21-80',
-        'assembly_name': '电气',
-        'assembly_time_days': 1,
-        'production_sequence': 5,
-        'is_final_assembly': False,
-    })
+    await app_client.post(
+        "/api/admin/assembly-times",
+        json={
+            "machine_model": "JH21-80",
+            "assembly_name": "机身",
+            "assembly_time_days": 1,
+            "production_sequence": 1,
+            "is_final_assembly": False,
+        },
+    )
+    await app_client.post(
+        "/api/admin/assembly-times",
+        json={
+            "machine_model": "JH21-80",
+            "assembly_name": "传动",
+            "assembly_time_days": 1,
+            "production_sequence": 2,
+            "is_final_assembly": False,
+        },
+    )
+    await app_client.post(
+        "/api/admin/assembly-times",
+        json={
+            "machine_model": "JH21-80",
+            "assembly_name": "电气",
+            "assembly_time_days": 1,
+            "production_sequence": 5,
+            "is_final_assembly": False,
+        },
+    )
 
-    resp = await app_client.post('/api/admin/assembly-times', json={
-        'machine_model': 'JH21-80',
-        'assembly_name': '整机总装',
-        'assembly_time_days': 3,
-        'production_sequence': 1,
-        'is_final_assembly': True,
-    })
+    resp = await app_client.post(
+        "/api/admin/assembly-times",
+        json={
+            "machine_model": "JH21-80",
+            "assembly_name": "整机总装",
+            "assembly_time_days": 3,
+            "production_sequence": 1,
+            "is_final_assembly": True,
+        },
+    )
     body = resp.json()
-    assert body['code'] == 0
+    assert body["code"] == 0
 
-    resp2 = await app_client.get('/api/admin/assembly-times?machine_model=JH21-80')
-    items = resp2.json()['data']
-    final_item = next(item for item in items if item['assembly_name'] == '整机总装')
-    assert final_item['is_final_assembly'] is True
-    assert final_item['production_sequence'] == 6
+    resp2 = await app_client.get("/api/admin/assembly-times?machine_model=JH21-80")
+    items = resp2.json()["data"]
+    final_item = next(item for item in items if item["assembly_name"] == "整机总装")
+    assert final_item["is_final_assembly"] is True
+    assert final_item["production_sequence"] == 6
 
 
 @pytest.mark.asyncio
 async def test_update_existing_final_assembly_recalculates_sequence(app_client):
-    await app_client.post('/api/admin/assembly-times', json={
-        'machine_model': 'JH21-80-EDIT',
-        'assembly_name': '机身',
-        'assembly_time_days': 1,
-        'production_sequence': 1,
-        'is_final_assembly': False,
-    })
-    await app_client.post('/api/admin/assembly-times', json={
-        'machine_model': 'JH21-80-EDIT',
-        'assembly_name': '电气',
-        'assembly_time_days': 1,
-        'production_sequence': 5,
-        'is_final_assembly': False,
-    })
-    await app_client.post('/api/admin/assembly-times', json={
-        'machine_model': 'JH21-80-EDIT',
-        'assembly_name': '整机总装',
-        'assembly_time_days': 3,
-        'production_sequence': 1,
-        'is_final_assembly': True,
-    })
+    await app_client.post(
+        "/api/admin/assembly-times",
+        json={
+            "machine_model": "JH21-80-EDIT",
+            "assembly_name": "机身",
+            "assembly_time_days": 1,
+            "production_sequence": 1,
+            "is_final_assembly": False,
+        },
+    )
+    await app_client.post(
+        "/api/admin/assembly-times",
+        json={
+            "machine_model": "JH21-80-EDIT",
+            "assembly_name": "电气",
+            "assembly_time_days": 1,
+            "production_sequence": 5,
+            "is_final_assembly": False,
+        },
+    )
+    await app_client.post(
+        "/api/admin/assembly-times",
+        json={
+            "machine_model": "JH21-80-EDIT",
+            "assembly_name": "整机总装",
+            "assembly_time_days": 3,
+            "production_sequence": 1,
+            "is_final_assembly": True,
+        },
+    )
 
-    resp = await app_client.post('/api/admin/assembly-times', json={
-        'machine_model': 'JH21-80-EDIT',
-        'assembly_name': '整机总装',
-        'assembly_time_days': 4,
-        'production_sequence': 99,
-        'is_final_assembly': True,
-    })
+    resp = await app_client.post(
+        "/api/admin/assembly-times",
+        json={
+            "machine_model": "JH21-80-EDIT",
+            "assembly_name": "整机总装",
+            "assembly_time_days": 4,
+            "production_sequence": 99,
+            "is_final_assembly": True,
+        },
+    )
     body = resp.json()
-    assert body['code'] == 0
+    assert body["code"] == 0
 
-    resp2 = await app_client.get('/api/admin/assembly-times?machine_model=JH21-80-EDIT')
-    items = resp2.json()['data']
-    final_item = next(item for item in items if item['assembly_name'] == '整机总装')
-    assert final_item['assembly_time_days'] == 4.0
-    assert final_item['production_sequence'] == 6
+    resp2 = await app_client.get("/api/admin/assembly-times?machine_model=JH21-80-EDIT")
+    items = resp2.json()["data"]
+    final_item = next(item for item in items if item["assembly_name"] == "整机总装")
+    assert final_item["assembly_time_days"] == 4.0
+    assert final_item["production_sequence"] == 6
 
 
 @pytest.mark.asyncio
 async def test_save_sub_assembly_reconciles_existing_final_assembly_sequence(app_client):
-    await app_client.post('/api/admin/assembly-times', json={
-        'machine_model': 'JH21-80-LATE',
-        'assembly_name': '整机总装',
-        'assembly_time_days': 3,
-        'production_sequence': 1,
-        'is_final_assembly': True,
-    })
-    await app_client.post('/api/admin/assembly-times', json={
-        'machine_model': 'JH21-80-LATE',
-        'assembly_name': '机身',
-        'assembly_time_days': 1,
-        'production_sequence': 1,
-        'is_final_assembly': False,
-    })
+    await app_client.post(
+        "/api/admin/assembly-times",
+        json={
+            "machine_model": "JH21-80-LATE",
+            "assembly_name": "整机总装",
+            "assembly_time_days": 3,
+            "production_sequence": 1,
+            "is_final_assembly": True,
+        },
+    )
+    await app_client.post(
+        "/api/admin/assembly-times",
+        json={
+            "machine_model": "JH21-80-LATE",
+            "assembly_name": "机身",
+            "assembly_time_days": 1,
+            "production_sequence": 1,
+            "is_final_assembly": False,
+        },
+    )
 
-    resp = await app_client.post('/api/admin/assembly-times', json={
-        'machine_model': 'JH21-80-LATE',
-        'assembly_name': '电气',
-        'assembly_time_days': 1,
-        'production_sequence': 5,
-        'is_final_assembly': False,
-    })
+    resp = await app_client.post(
+        "/api/admin/assembly-times",
+        json={
+            "machine_model": "JH21-80-LATE",
+            "assembly_name": "电气",
+            "assembly_time_days": 1,
+            "production_sequence": 5,
+            "is_final_assembly": False,
+        },
+    )
     body = resp.json()
-    assert body['code'] == 0
+    assert body["code"] == 0
 
-    resp2 = await app_client.get('/api/admin/assembly-times?machine_model=JH21-80-LATE')
-    items = resp2.json()['data']
-    final_item = next(item for item in items if item['assembly_name'] == '整机总装')
-    assert final_item['production_sequence'] == 6
+    resp2 = await app_client.get("/api/admin/assembly-times?machine_model=JH21-80-LATE")
+    items = resp2.json()["data"]
+    final_item = next(item for item in items if item["assembly_name"] == "整机总装")
+    assert final_item["production_sequence"] == 6
 
 
 @pytest.mark.asyncio
 async def test_delete_sub_assembly_reconciles_existing_final_assembly_sequence(app_client):
-    await app_client.post('/api/admin/assembly-times', json={
-        'machine_model': 'JH21-80-DELETE',
-        'assembly_name': '机身',
-        'assembly_time_days': 1,
-        'production_sequence': 1,
-        'is_final_assembly': False,
-    })
-    await app_client.post('/api/admin/assembly-times', json={
-        'machine_model': 'JH21-80-DELETE',
-        'assembly_name': '电气',
-        'assembly_time_days': 1,
-        'production_sequence': 5,
-        'is_final_assembly': False,
-    })
-    await app_client.post('/api/admin/assembly-times', json={
-        'machine_model': 'JH21-80-DELETE',
-        'assembly_name': '整机总装',
-        'assembly_time_days': 3,
-        'production_sequence': 1,
-        'is_final_assembly': True,
-    })
+    await app_client.post(
+        "/api/admin/assembly-times",
+        json={
+            "machine_model": "JH21-80-DELETE",
+            "assembly_name": "机身",
+            "assembly_time_days": 1,
+            "production_sequence": 1,
+            "is_final_assembly": False,
+        },
+    )
+    await app_client.post(
+        "/api/admin/assembly-times",
+        json={
+            "machine_model": "JH21-80-DELETE",
+            "assembly_name": "电气",
+            "assembly_time_days": 1,
+            "production_sequence": 5,
+            "is_final_assembly": False,
+        },
+    )
+    await app_client.post(
+        "/api/admin/assembly-times",
+        json={
+            "machine_model": "JH21-80-DELETE",
+            "assembly_name": "整机总装",
+            "assembly_time_days": 3,
+            "production_sequence": 1,
+            "is_final_assembly": True,
+        },
+    )
 
-    before_resp = await app_client.get('/api/admin/assembly-times?machine_model=JH21-80-DELETE')
-    before_items = before_resp.json()['data']
-    electric_item = next(item for item in before_items if item['assembly_name'] == '电气')
+    before_resp = await app_client.get("/api/admin/assembly-times?machine_model=JH21-80-DELETE")
+    before_items = before_resp.json()["data"]
+    electric_item = next(item for item in before_items if item["assembly_name"] == "电气")
 
     delete_resp = await app_client.delete(f"/api/admin/assembly-times/{electric_item['id']}")
     delete_body = delete_resp.json()
-    assert delete_body['code'] == 0
+    assert delete_body["code"] == 0
 
-    after_resp = await app_client.get('/api/admin/assembly-times?machine_model=JH21-80-DELETE')
-    after_items = after_resp.json()['data']
-    final_item = next(item for item in after_items if item['assembly_name'] == '整机总装')
-    assert final_item['production_sequence'] == 2
+    after_resp = await app_client.get("/api/admin/assembly-times?machine_model=JH21-80-DELETE")
+    after_items = after_resp.json()["data"]
+    final_item = next(item for item in after_items if item["assembly_name"] == "整机总装")
+    assert final_item["production_sequence"] == 2

@@ -1,7 +1,7 @@
 import pytest
 
-from app.models.order_schedule_snapshot import OrderScheduleSnapshot
 from app.models.machine_schedule_result import MachineScheduleResult
+from app.models.order_schedule_snapshot import OrderScheduleSnapshot
 from app.repository.order_schedule_snapshot_repo import OrderScheduleSnapshotRepo
 
 

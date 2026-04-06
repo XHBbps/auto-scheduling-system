@@ -1,12 +1,11 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from datetime import datetime
 
 from sqlalchemy import select
-
-from app.common.datetime_utils import utc_now
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.common.datetime_utils import utc_now
 from app.common.enums import BackgroundTaskStatus
 from app.models.background_task import BackgroundTask
 from app.repository.base import BaseRepository
@@ -23,9 +22,7 @@ class BackgroundTaskRepo(BaseRepository[BackgroundTask]):
             select(BackgroundTask)
             .where(
                 BackgroundTask.dedupe_key == dedupe_key,
-                BackgroundTask.status.in_(
-                    [BackgroundTaskStatus.PENDING.value, BackgroundTaskStatus.RUNNING.value]
-                ),
+                BackgroundTask.status.in_([BackgroundTaskStatus.PENDING.value, BackgroundTaskStatus.RUNNING.value]),
             )
             .order_by(BackgroundTask.id.desc())
             .limit(1)

@@ -1,6 +1,6 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Sequence
 from datetime import datetime, timedelta
-from typing import Any, Sequence
+from typing import Any
 
 from sqlalchemy import Integer, and_, case, delete, func, literal, or_, select, union_all
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -105,11 +105,7 @@ class PartScheduleResultRepo(BaseRepository[PartScheduleResult]):
 
     def _build_list_conditions(self, filters: dict[str, Any]) -> tuple[list[Any], bool]:
         conditions = [self._visible_part_row_condition()]
-        needs_snapshot_join = bool(
-            filters.get("contract_no")
-            or filters.get("order_no")
-            or filters.get("plant")
-        )
+        needs_snapshot_join = bool(filters.get("contract_no") or filters.get("order_no") or filters.get("plant"))
 
         if filters.get("order_line_id"):
             conditions.append(PartScheduleResult.order_line_id == filters["order_line_id"])
@@ -180,48 +176,58 @@ class PartScheduleResultRepo(BaseRepository[PartScheduleResult]):
             sort_order=sort_order,
             allowed_fields=self.build_allowed_sort_fields(),
         )
-        stmt = base.order_by(
-            *resolve_order_by(
-                sort_expression=sort_expression,
-                default_order_by=[
-                    PartScheduleResult.order_line_id.desc(),
-                    *self._default_part_order_by(),
-                ],
+        stmt = (
+            base.order_by(
+                *resolve_order_by(
+                    sort_expression=sort_expression,
+                    default_order_by=[
+                        PartScheduleResult.order_line_id.desc(),
+                        *self._default_part_order_by(),
+                    ],
+                )
             )
-        ).offset((page_no - 1) * page_size).limit(page_size)
+            .offset((page_no - 1) * page_size)
+            .limit(page_size)
+        )
         items = (await self.session.execute(stmt)).all()
         return items, total
 
     async def delete_by_order_line_id(self, order_line_id: int) -> int:
-        stmt = delete(PartScheduleResult).where(
-            PartScheduleResult.order_line_id == order_line_id
-        )
+        stmt = delete(PartScheduleResult).where(PartScheduleResult.order_line_id == order_line_id)
         result = await self.session.execute(stmt)
         await self.session.flush()
         return result.rowcount
 
     async def find_by_order_line_id(self, order_line_id: int) -> Sequence[PartScheduleResult]:
-        stmt = select(PartScheduleResult).where(
-            and_(
-                PartScheduleResult.order_line_id == order_line_id,
-                self._visible_part_row_condition(),
+        stmt = (
+            select(PartScheduleResult)
+            .where(
+                and_(
+                    PartScheduleResult.order_line_id == order_line_id,
+                    self._visible_part_row_condition(),
+                )
             )
-        ).order_by(
-            PartScheduleResult.production_sequence,
-            PartScheduleResult.assembly_name,
-            PartScheduleResult.is_key_part.desc(),
-            PartScheduleResult.node_level.asc(),
-            PartScheduleResult.bom_path.asc(),
-            PartScheduleResult.part_material_no,
+            .order_by(
+                PartScheduleResult.production_sequence,
+                PartScheduleResult.assembly_name,
+                PartScheduleResult.is_key_part.desc(),
+                PartScheduleResult.node_level.asc(),
+                PartScheduleResult.bom_path.asc(),
+                PartScheduleResult.part_material_no,
+            )
         )
         result = await self.session.execute(stmt)
         return result.scalars().all()
 
     async def count_for_export(self, **filters: Any) -> int:
         conditions = self._build_export_conditions(filters)
-        stmt = select(func.count()).select_from(PartScheduleResult).join(
-            OrderScheduleSnapshot,
-            OrderScheduleSnapshot.order_line_id == PartScheduleResult.order_line_id,
+        stmt = (
+            select(func.count())
+            .select_from(PartScheduleResult)
+            .join(
+                OrderScheduleSnapshot,
+                OrderScheduleSnapshot.order_line_id == PartScheduleResult.order_line_id,
+            )
         )
         if conditions:
             stmt = stmt.where(and_(*conditions))
@@ -345,11 +351,7 @@ class PartScheduleResultRepo(BaseRepository[PartScheduleResult]):
         return result.scalars().all()
 
     async def count_all(self) -> int:
-        stmt = (
-            select(func.count())
-            .select_from(PartScheduleResult)
-            .where(self._visible_part_row_condition())
-        )
+        stmt = select(func.count()).select_from(PartScheduleResult).where(self._visible_part_row_condition())
         return (await self.session.execute(stmt)).scalar_one()
 
     async def get_dashboard_summary(
@@ -372,31 +374,27 @@ class PartScheduleResultRepo(BaseRepository[PartScheduleResult]):
             .group_by(PartScheduleResult.assembly_name)
             .subquery()
         )
-        ranked_assemblies_subquery = (
-            select(
-                literal("assembly").label("bucket"),
-                assembly_counts_subquery.c.group_key,
-                assembly_counts_subquery.c.item_count,
-                func.row_number().over(
-                    order_by=(
-                        assembly_counts_subquery.c.item_count.desc(),
-                        assembly_counts_subquery.c.group_key.asc(),
-                    )
-                ).label("row_num"),
+        ranked_assemblies_subquery = select(
+            literal("assembly").label("bucket"),
+            assembly_counts_subquery.c.group_key,
+            assembly_counts_subquery.c.item_count,
+            func.row_number()
+            .over(
+                order_by=(
+                    assembly_counts_subquery.c.item_count.desc(),
+                    assembly_counts_subquery.c.group_key.asc(),
+                )
             )
-            .subquery()
-        )
+            .label("row_num"),
+        ).subquery()
         grouped_stmt = union_all(
             select(
                 literal("summary").label("bucket"),
                 literal(None).label("group_key"),
                 func.count(PartScheduleResult.id).label("item_count"),
-                func.sum(
-                    case((PartScheduleResult.warning_level == "abnormal", 1), else_=0)
-                ).label("metric_one"),
+                func.sum(case((PartScheduleResult.warning_level == "abnormal", 1), else_=0)).label("metric_one"),
                 literal(None).cast(Integer).label("row_num"),
-            )
-            .where(visible_condition),
+            ).where(visible_condition),
             select(
                 literal("warning_level").label("bucket"),
                 PartScheduleResult.warning_level.label("group_key"),

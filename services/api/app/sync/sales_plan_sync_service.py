@@ -1,10 +1,9 @@
-
 import logging
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
-from sqlalchemy import and_, select, tuple_
+from sqlalchemy import select, tuple_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.integration.guandata_client import GuandataClient
@@ -80,6 +79,7 @@ class SalesPlanSyncService:
         self.snapshot_refresh_service = ScheduleSnapshotRefreshService(session)
         self._touched_order_line_ids: set[int] = set()
         self._pending_snapshot_refresh_ids: set[int] = set()
+        self._has_fetch_error: bool = False
 
     async def sync(
         self,
@@ -89,6 +89,7 @@ class SalesPlanSyncService:
         result = SyncResult()
         self._touched_order_line_ids.clear()
         self._pending_snapshot_refresh_ids.clear()
+        self._has_fetch_error = False
         owns_job = job is None
         if owns_job:
             job = await start_sync_job(self.session, "sales_plan", "guandata")
@@ -97,12 +98,11 @@ class SalesPlanSyncService:
         offset = 0
         while True:
             try:
-                records, total = await self.client.fetch_sales_page(
-                    offset=offset, limit=_PAGE_SIZE, filters=filters
-                )
+                records, total = await self.client.fetch_sales_page(offset=offset, limit=_PAGE_SIZE, filters=filters)
             except Exception as exc:
                 logger.error("Guandata fetch failed at offset %s: %s", offset, exc)
                 result.record_fail()
+                self._has_fetch_error = True
                 break
 
             if not records:
@@ -116,7 +116,14 @@ class SalesPlanSyncService:
             if len(records) < _PAGE_SIZE:
                 break
 
-        await self._flush_pending_snapshot_refreshes()
+        if not self._has_fetch_error:
+            await self._flush_pending_snapshot_refreshes()
+        else:
+            logger.warning(
+                "Skipping snapshot refresh due to fetch errors during sales plan sync (successful=%s, failed=%s)",
+                result.success_count,
+                result.fail_count,
+            )
         await finish_sync_job(self.session, job, result, f"synced {result.success_count} records")
         return result
 

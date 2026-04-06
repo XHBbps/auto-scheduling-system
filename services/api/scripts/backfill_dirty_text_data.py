@@ -20,10 +20,9 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true", help="Only calculate changes without committing.")
     args = parser.parse_args()
 
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
-    )
+    from app.common.logging_setup import configure_logging
+
+    configure_logging()
     asyncio.run(run(dry_run=args.dry_run))
 
 

@@ -1,5 +1,7 @@
-import pytest
 from decimal import Decimal
+
+import pytest
+
 from app.repository.machine_schedule_result_repo import MachineScheduleResultRepo
 
 
@@ -13,7 +15,7 @@ async def test_upsert_by_order_line_id(db_session):
             "schedule_status": "scheduled",
             "machine_cycle_days": Decimal("20"),
             "run_batch_no": "SCH001",
-        }
+        },
     )
     await db_session.commit()
     assert row.id is not None
@@ -21,8 +23,7 @@ async def test_upsert_by_order_line_id(db_session):
 
     # Upsert again — should update
     row2 = await repo.upsert_by_order_line_id(
-        order_line_id=101,
-        data={"schedule_status": "scheduled", "run_batch_no": "SCH002"}
+        order_line_id=101, data={"schedule_status": "scheduled", "run_batch_no": "SCH002"}
     )
     await db_session.commit()
     assert row2.id == row.id

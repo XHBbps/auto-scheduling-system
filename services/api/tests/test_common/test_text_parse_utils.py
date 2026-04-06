@@ -1,6 +1,6 @@
 from app.common.text_parse_utils import (
-    extract_part_type,
     extract_chinese_prefix,
+    extract_part_type,
     is_excluded_assembly,
     normalize_assembly_name,
 )

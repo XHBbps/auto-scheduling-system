@@ -1,5 +1,3 @@
-from typing import Optional
-
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import and_, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,13 +24,13 @@ require_sync_log_view_permission = require_permission("sync.log.view")
     response_model=ApiResponse[PageResult[SyncLogItemResponse]],
 )
 async def list_sync_logs(
-    job_type: Optional[str] = None,
-    source_system: Optional[str] = None,
-    status: Optional[str] = None,
+    job_type: str | None = None,
+    source_system: str | None = None,
+    status: str | None = None,
     page_no: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    sort_field: Optional[str] = None,
-    sort_order: Optional[str] = None,
+    sort_field: str | None = None,
+    sort_order: str | None = None,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_sync_log_view_permission),
 ):
@@ -77,12 +75,14 @@ async def list_sync_logs(
     result = await session.execute(stmt)
     items = result.scalars().all()
 
-    return ApiResponse.ok(data={
-        "total": total,
-        "page_no": page_no,
-        "page_size": page_size,
-        "items": [serialize_sync_log(i) for i in items],
-    })
+    return ApiResponse.ok(
+        data={
+            "total": total,
+            "page_no": page_no,
+            "page_size": page_size,
+            "items": [serialize_sync_log(i) for i in items],
+        }
+    )
 
 
 @router.get(

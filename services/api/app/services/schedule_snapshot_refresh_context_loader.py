@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Any, Sequence
+from typing import Any
 
-from sqlalchemy import distinct, func, select, text
+from sqlalchemy import distinct, func, literal, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -81,19 +82,12 @@ class ScheduleSnapshotRefreshContextLoader:
         return grouped
 
     async def load_machine_bom_pairs(self) -> set[tuple[str, str]]:
-        stmt = (
-            select(
-                distinct(BomRelationSrc.machine_material_no),
-                func.coalesce(BomRelationSrc.plant, text(f"'{settings.default_plant}'")).label("plant"),
-            )
-            .where(BomRelationSrc.machine_material_no.isnot(None))
-        )
+        stmt = select(
+            distinct(BomRelationSrc.machine_material_no),
+            func.coalesce(BomRelationSrc.plant, literal(settings.default_plant)).label("plant"),
+        ).where(BomRelationSrc.machine_material_no.isnot(None))
         rows = (await self.session.execute(stmt)).all()
-        return {
-            (str(material_no), str(plant))
-            for material_no, plant in rows
-            if material_no
-        }
+        return {(str(material_no), str(plant)) for material_no, plant in rows if material_no}
 
     async def build_dynamic_context(
         self,
@@ -138,8 +132,7 @@ class ScheduleSnapshotRefreshContextLoader:
             grouped.setdefault(row.machine_model, {})
             grouped[row.machine_model].setdefault(row.order_qty, row)
         return {
-            machine_model: [bucket[qty] for qty in sorted(bucket.keys())]
-            for machine_model, bucket in grouped.items()
+            machine_model: [bucket[qty] for qty in sorted(bucket.keys())] for machine_model, bucket in grouped.items()
         }
 
     async def load_seed_calendar(
@@ -167,7 +160,10 @@ class ScheduleSnapshotRefreshContextLoader:
             .label("machine_max_delivery"),
         )
         row = (await self.session.execute(stmt)).one()
-        candidates = [self.normalize_date_value(row.sales_max_delivery), self.normalize_date_value(row.machine_max_delivery)]
+        candidates = [
+            self.normalize_date_value(row.sales_max_delivery),
+            self.normalize_date_value(row.machine_max_delivery),
+        ]
         return max((value for value in candidates if value is not None), default=self.today)
 
     async def load_calendar_until(self, end_date: date | datetime | None) -> dict[date, bool]:

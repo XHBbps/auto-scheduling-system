@@ -1,17 +1,14 @@
-
-from typing import Optional
-
 from fastapi import APIRouter, Depends
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.common.auth import CurrentUserIdentity, require_permission
 from app.baseline.assembly_time_default_service import AssemblyTimeDefaultService
+from app.common.auth import CurrentUserIdentity, require_permission
 from app.common.exceptions import ErrorCode
 from app.common.response import ApiResponse
 from app.database import get_session
 from app.models.assembly_time import AssemblyTimeBaseline
-from app.repository.assembly_time_repo import AssemblyTimeRepo, FINAL_ASSEMBLY_NAME
+from app.repository.assembly_time_repo import FINAL_ASSEMBLY_NAME, AssemblyTimeRepo
 from app.schemas.admin_schemas import AssemblyTimeItemResponse, AssemblyTimeRequest, IdMachineModelResponse
 from app.services.schedule_snapshot_refresh_service import ScheduleSnapshotRefreshService
 
@@ -21,10 +18,12 @@ require_settings_manage_permission = require_permission("settings.manage")
 
 
 def _should_force_final_assembly_sequence(*, assembly_name: str, is_final_assembly: bool) -> bool:
-    return is_final_assembly or (assembly_name or '').strip() == FINAL_ASSEMBLY_NAME
+    return is_final_assembly or (assembly_name or "").strip() == FINAL_ASSEMBLY_NAME
 
 
-async def _resolve_production_sequence(repo: AssemblyTimeRepo, *, machine_model: str, assembly_name: str, is_final_assembly: bool, requested_sequence: int) -> tuple[int, bool]:
+async def _resolve_production_sequence(
+    repo: AssemblyTimeRepo, *, machine_model: str, assembly_name: str, is_final_assembly: bool, requested_sequence: int
+) -> tuple[int, bool]:
     force_final = _should_force_final_assembly_sequence(
         assembly_name=assembly_name,
         is_final_assembly=is_final_assembly,
@@ -43,9 +42,9 @@ async def _resolve_production_sequence(repo: AssemblyTimeRepo, *, machine_model:
     response_model=ApiResponse[list[AssemblyTimeItemResponse]],
 )
 async def list_assembly_times(
-    machine_model: Optional[str] = None,
-    product_series: Optional[str] = None,
-    assembly_name: Optional[str] = None,
+    machine_model: str | None = None,
+    product_series: str | None = None,
+    assembly_name: str | None = None,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_settings_manage_permission),
 ):
@@ -62,20 +61,22 @@ async def list_assembly_times(
     stmt = stmt.order_by(AssemblyTimeBaseline.machine_model, AssemblyTimeBaseline.production_sequence)
     result = await session.execute(stmt)
     items = result.scalars().all()
-    return ApiResponse.ok(data=[
-        {
-            "id": item.id,
-            "machine_model": item.machine_model,
-            "product_series": item.product_series,
-            "assembly_name": item.assembly_name,
-            "assembly_time_days": float(item.assembly_time_days),
-            "is_final_assembly": item.is_final_assembly,
-            "production_sequence": item.production_sequence,
-            "is_default": item.is_default,
-            "remark": item.remark,
-        }
-        for item in items
-    ])
+    return ApiResponse.ok(
+        data=[
+            {
+                "id": item.id,
+                "machine_model": item.machine_model,
+                "product_series": item.product_series,
+                "assembly_name": item.assembly_name,
+                "assembly_time_days": float(item.assembly_time_days),
+                "is_final_assembly": item.is_final_assembly,
+                "production_sequence": item.production_sequence,
+                "is_default": item.is_default,
+                "remark": item.remark,
+            }
+            for item in items
+        ]
+    )
 
 
 @router.post(

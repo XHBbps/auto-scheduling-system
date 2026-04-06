@@ -1,6 +1,5 @@
-﻿from datetime import datetime
+from datetime import datetime
 from decimal import Decimal
-from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, Index, Numeric, String, Text, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column
@@ -15,19 +14,19 @@ class PartCycleBaseline(TimestampMixin, Base):
     material_no: Mapped[str] = mapped_column(String(100), nullable=False)
     material_desc: Mapped[str] = mapped_column(String(255), nullable=False)
     core_part_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    machine_model: Mapped[Optional[str]] = mapped_column(String(100))
-    plant: Mapped[Optional[str]] = mapped_column(String(50))
+    machine_model: Mapped[str | None] = mapped_column(String(100))
+    plant: Mapped[str | None] = mapped_column(String(50))
     ref_batch_qty: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
     cycle_days: Mapped[Decimal] = mapped_column(Numeric(18, 4), nullable=False)
     unit_cycle_days: Mapped[Decimal] = mapped_column(Numeric(18, 6), nullable=False)
     sample_count: Mapped[int] = mapped_column(default=0, nullable=False)
-    source_updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    cycle_source: Mapped[Optional[str]] = mapped_column(String(50))
-    match_rule: Mapped[Optional[str]] = mapped_column(String(100))
-    confidence_level: Mapped[Optional[str]] = mapped_column(String(50))
+    source_updated_at: Mapped[datetime | None] = mapped_column(DateTime)
+    cycle_source: Mapped[str | None] = mapped_column(String(50))
+    match_rule: Mapped[str | None] = mapped_column(String(100))
+    confidence_level: Mapped[str | None] = mapped_column(String(50))
     is_default: Mapped[bool] = mapped_column(Boolean, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    remark: Mapped[Optional[str]] = mapped_column(Text)
+    remark: Mapped[str | None] = mapped_column(Text)
 
     __table_args__ = (
         UniqueConstraint("material_no", "machine_model", "plant", name="uq_pcb_material_machine_plant"),

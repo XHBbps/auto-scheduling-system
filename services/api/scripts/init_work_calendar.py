@@ -2,13 +2,13 @@
 
 Usage: python -m scripts.init_work_calendar
 """
+
 import asyncio
 from datetime import date, timedelta
 
-from app.database import async_session_factory
+from app.database import async_session_factory, engine
 from app.models.base import Base
 from app.models.work_calendar import WorkCalendar
-from app.database import engine
 
 
 async def init_calendar():
@@ -21,11 +21,13 @@ async def init_calendar():
         current = start
         batch = []
         while current <= end:
-            batch.append(WorkCalendar(
-                calendar_date=current,
-                is_workday=current.weekday() < 5,
-                remark=None,
-            ))
+            batch.append(
+                WorkCalendar(
+                    calendar_date=current,
+                    is_workday=current.weekday() < 5,
+                    remark=None,
+                )
+            )
             current += timedelta(days=1)
 
         session.add_all(batch)

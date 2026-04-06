@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Awaitable, Callable, Sequence
+from collections.abc import Awaitable, Callable, Sequence
+from typing import Any
 
 from app.models.machine_schedule_result import MachineScheduleResult
 from app.models.order_schedule_snapshot import OrderScheduleSnapshot
@@ -25,10 +26,7 @@ class ScheduleSnapshotRefreshBatchHelper:
         order_map = await load_sales_orders(order_line_ids)
         machine_map = await load_machine_results(order_line_ids)
         snapshot_map = (
-            {
-                snapshot.order_line_id: snapshot
-                for snapshot in await load_snapshots(order_line_ids)
-            }
+            {snapshot.order_line_id: snapshot for snapshot in await load_snapshots(order_line_ids)}
             if include_snapshot_map
             else {}
         )

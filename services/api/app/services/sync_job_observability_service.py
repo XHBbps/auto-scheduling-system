@@ -1,13 +1,10 @@
 import re
-from datetime import datetime
 from typing import Any
 
 from sqlalchemy import case, desc, func, literal, select, true, union_all
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.datetime_utils import utc_now
-
-from app.common.enums import BomBackfillQueueStatus
 from app.models.bom_relation import BomRelationSrc
 from app.models.data_issue import DataIssueRecord
 from app.models.order_schedule_snapshot import OrderScheduleSnapshot
@@ -149,9 +146,7 @@ class SyncJobObservabilityService:
                 "retry_wait_due": queue_summary["retry_wait_due"],
                 "failure_kind_counts": queue_summary["failure_kind_counts"],
                 "oldest_pending_age_minutes": (
-                    int((utc_now() - oldest_pending_at).total_seconds() // 60)
-                    if oldest_pending_at
-                    else None
+                    int((utc_now() - oldest_pending_at).total_seconds() // 60) if oldest_pending_at else None
                 ),
                 "latest_failed_items": list(queue_summary["latest_failed_items"]),
             },
@@ -164,9 +159,9 @@ class SyncJobObservabilityService:
         snapshot_counts = (
             select(
                 func.count().label("snapshot_total"),
-                func.sum(
-                    case((OrderScheduleSnapshot.schedule_status == "missing_bom", 1), else_=0)
-                ).label("missing_bom_snapshot_count"),
+                func.sum(case((OrderScheduleSnapshot.schedule_status == "missing_bom", 1), else_=0)).label(
+                    "missing_bom_snapshot_count"
+                ),
             )
             .select_from(OrderScheduleSnapshot)
             .subquery()
@@ -220,12 +215,7 @@ class SyncJobObservabilityService:
         }
 
     async def _get_latest_job(self, *, job_type: str) -> dict[str, Any] | None:
-        stmt = (
-            select(SyncJobLog)
-            .where(SyncJobLog.job_type == job_type)
-            .order_by(desc(SyncJobLog.id))
-            .limit(1)
-        )
+        stmt = select(SyncJobLog).where(SyncJobLog.job_type == job_type).order_by(desc(SyncJobLog.id)).limit(1)
         entity = (await self.session.execute(stmt)).scalar_one_or_none()
         return serialize_sync_log(entity) if entity else None
 
@@ -235,10 +225,7 @@ class SyncJobObservabilityService:
             .where(
                 SyncJobLog.job_type == "bom",
                 SyncJobLog.message.is_not(None),
-                (
-                    SyncJobLog.message.contains("自动补齐 BOM")
-                    | SyncJobLog.message.contains("BOM 补数队列")
-                ),
+                (SyncJobLog.message.contains("自动补齐 BOM") | SyncJobLog.message.contains("BOM 补数队列")),
             )
             .order_by(desc(SyncJobLog.id))
             .limit(1)
@@ -275,10 +262,7 @@ class SyncJobObservabilityService:
             .where(
                 SyncJobLog.job_type == "bom",
                 SyncJobLog.message.is_not(None),
-                (
-                    SyncJobLog.message.contains("自动补齐 BOM")
-                    | SyncJobLog.message.contains("BOM 补数队列")
-                ),
+                (SyncJobLog.message.contains("自动补齐 BOM") | SyncJobLog.message.contains("BOM 补数队列")),
             )
             .order_by(desc(SyncJobLog.id))
             .limit(1)
@@ -300,9 +284,8 @@ class SyncJobObservabilityService:
             ),
         ).subquery()
 
-        stmt = (
-            select(latest_job_ids.c.job_key, SyncJobLog)
-            .join(SyncJobLog, SyncJobLog.id == latest_job_ids.c.log_id, isouter=True)
+        stmt = select(latest_job_ids.c.job_key, SyncJobLog).join(
+            SyncJobLog, SyncJobLog.id == latest_job_ids.c.log_id, isouter=True
         )
         rows = (await self.session.execute(stmt)).all()
         jobs: dict[str, dict[str, Any] | None] = {

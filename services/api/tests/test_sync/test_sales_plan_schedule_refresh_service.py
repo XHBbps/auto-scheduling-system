@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from decimal import Decimal
 
@@ -30,48 +29,58 @@ async def test_refresh_if_scheduled_marks_snapshot_stale_instead_of_deleting_res
         order_no="SO900",
     )
     db_session.add(order)
-    db_session.add(MachineCycleBaseline(
-        machine_model="MC1-80",
-        product_series="MC1",
-        order_qty=Decimal("1"),
-        cycle_days_median=Decimal("1"),
-        sample_count=5,
-        is_active=True,
-    ))
-    db_session.add(AssemblyTimeBaseline(
-        machine_model="MC1-80",
-        assembly_name="整机总装",
-        assembly_time_days=Decimal("3"),
-        is_final_assembly=True,
-        production_sequence=99,
-    ))
-    db_session.add(AssemblyTimeBaseline(
-        machine_model="MC1-80",
-        assembly_name="机身",
-        assembly_time_days=Decimal("2"),
-        is_final_assembly=False,
-        production_sequence=1,
-    ))
-    db_session.add(BomRelationSrc(
-        machine_material_no="MACH900",
-        plant="1000",
-        material_no="MACH900",
-        bom_component_no="ASM900",
-        bom_component_desc="机身总成MC1-80",
-        bom_level=1,
-        is_self_made=True,
-        part_type="自产件",
-    ))
-    db_session.add(BomRelationSrc(
-        machine_material_no="MACH900",
-        plant="1000",
-        material_no="ASM900",
-        bom_component_no="PART900",
-        bom_component_desc="机身焊接件",
-        bom_level=2,
-        is_self_made=True,
-        part_type="自产件",
-    ))
+    db_session.add(
+        MachineCycleBaseline(
+            machine_model="MC1-80",
+            product_series="MC1",
+            order_qty=Decimal("1"),
+            cycle_days_median=Decimal("1"),
+            sample_count=5,
+            is_active=True,
+        )
+    )
+    db_session.add(
+        AssemblyTimeBaseline(
+            machine_model="MC1-80",
+            assembly_name="整机总装",
+            assembly_time_days=Decimal("3"),
+            is_final_assembly=True,
+            production_sequence=99,
+        )
+    )
+    db_session.add(
+        AssemblyTimeBaseline(
+            machine_model="MC1-80",
+            assembly_name="机身",
+            assembly_time_days=Decimal("2"),
+            is_final_assembly=False,
+            production_sequence=1,
+        )
+    )
+    db_session.add(
+        BomRelationSrc(
+            machine_material_no="MACH900",
+            plant="1000",
+            material_no="MACH900",
+            bom_component_no="ASM900",
+            bom_component_desc="机身总成MC1-80",
+            bom_level=1,
+            is_self_made=True,
+            part_type="自产件",
+        )
+    )
+    db_session.add(
+        BomRelationSrc(
+            machine_material_no="MACH900",
+            plant="1000",
+            material_no="ASM900",
+            bom_component_no="PART900",
+            bom_component_desc="机身焊接件",
+            bom_level=2,
+            is_self_made=True,
+            part_type="自产件",
+        )
+    )
     await db_session.commit()
 
     first_result = await ScheduleOrchestrator(db_session).schedule_order(order.id)
@@ -88,14 +97,12 @@ async def test_refresh_if_scheduled_marks_snapshot_stale_instead_of_deleting_res
     await db_session.commit()
 
     machine_results = (
-        await db_session.execute(
-            select(MachineScheduleResult).where(MachineScheduleResult.order_line_id == order.id)
-        )
-    ).scalars().all()
+        (await db_session.execute(select(MachineScheduleResult).where(MachineScheduleResult.order_line_id == order.id)))
+        .scalars()
+        .all()
+    )
     snapshot = (
-        await db_session.execute(
-            select(OrderScheduleSnapshot).where(OrderScheduleSnapshot.order_line_id == order.id)
-        )
+        await db_session.execute(select(OrderScheduleSnapshot).where(OrderScheduleSnapshot.order_line_id == order.id))
     ).scalar_one()
 
     assert refresh_result["triggered"] is True

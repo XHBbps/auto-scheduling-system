@@ -7,13 +7,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.integration.feishu_client import FeishuClient
 from app.integration.feishu_field_maps import (
-    extract_feishu_text, extract_feishu_number,
+    extract_feishu_number,
+    extract_feishu_text,
     extract_feishu_timestamp_ms,
 )
 from app.models.production_order import ProductionOrderHistorySrc
 from app.models.sync_job_log import SyncJobLog
 from app.repository.production_order_repo import ProductionOrderRepo
-from app.sync.sync_support_utils import SyncResult, start_sync_job, finish_sync_job
+from app.sync.sync_support_utils import SyncResult, finish_sync_job, start_sync_job
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,11 @@ class ProductionOrderSyncService:
         self.table_id = table_id
         self.repo = ProductionOrderRepo(session)
         self._seen_order_nos: set[str] = set()
+        self._has_fetch_error: bool = False
+
+    @property
+    def has_fetch_error(self) -> bool:
+        return self._has_fetch_error
 
     async def sync(
         self,
@@ -53,11 +59,12 @@ class ProductionOrderSyncService:
             job = await start_sync_job(self.session, "production_order", "feishu")
             await self.session.commit()
         self._seen_order_nos.clear()
+        self._has_fetch_error = False
 
         page_token = None
         while True:
             try:
-                items, has_more, page_token, total = await self.client.search_records(
+                items, has_more, page_token, _total = await self.client.search_records(
                     app_token=self.app_token,
                     table_id=self.table_id,
                     page_token=page_token if page_token else None,
@@ -65,6 +72,7 @@ class ProductionOrderSyncService:
             except Exception as e:
                 logger.error(f"Feishu production order fetch failed: {e}")
                 result.record_fail()
+                self._has_fetch_error = True
                 break
 
             for item in items:
@@ -109,20 +117,22 @@ class ProductionOrderSyncService:
             "material_desc": extract_feishu_text(fields, "物料描述"),
             "machine_model": extract_feishu_text(fields, "机床型号"),
             "plant": extract_feishu_text(fields, "生产工厂"),
-            "processing_dept": fields.get("加工部门") if isinstance(fields.get("加工部门"), str) else extract_feishu_text(fields, "加工部门"),
+            "processing_dept": fields.get("加工部门")
+            if isinstance(fields.get("加工部门"), str)
+            else extract_feishu_text(fields, "加工部门"),
             "start_time_actual": _ms_to_datetime(extract_feishu_timestamp_ms(fields, "投产时间")),
             "finish_time_actual": _ms_to_datetime(extract_feishu_timestamp_ms(fields, "完工时间")),
             "production_qty": Decimal(str(qty_raw)) if qty_raw is not None else None,
-            "order_status": fields.get("生产订单状态") if isinstance(fields.get("生产订单状态"), str) else extract_feishu_text(fields, "生产订单状态"),
+            "order_status": fields.get("生产订单状态")
+            if isinstance(fields.get("生产订单状态"), str)
+            else extract_feishu_text(fields, "生产订单状态"),
             "sales_order_no": extract_feishu_text(fields, "销售订单号"),
             "created_time_src": _ms_to_datetime(extract_feishu_timestamp_ms(fields, "创建时间")),
             "last_modified_time_src": _ms_to_datetime(extract_feishu_timestamp_ms(fields, "最后更新时间")),
         }
 
         # Check if exists
-        stmt = select(ProductionOrderHistorySrc).where(
-            ProductionOrderHistorySrc.production_order_no == order_no
-        )
+        stmt = select(ProductionOrderHistorySrc).where(ProductionOrderHistorySrc.production_order_no == order_no)
         existing = (await self.session.execute(stmt)).scalar_one_or_none()
 
         await self.repo.upsert_by_order_no(order_no, data)

@@ -1,6 +1,4 @@
-
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -31,7 +29,7 @@ require_settings_manage_permission = require_permission("settings.manage")
     response_model=ApiResponse[list[WorkCalendarRecordResponse]],
 )
 async def get_work_calendar(
-    month: Optional[str] = Query(None, description="要查询的月份；不传时返回全部工作日历配置，格式 yyyy-MM。"),
+    month: str | None = Query(None, description="要查询的月份；不传时返回全部工作日历配置，格式 yyyy-MM。"),
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_settings_manage_permission),
 ):
@@ -42,15 +40,17 @@ async def get_work_calendar(
         items = await repo.get_by_month(year, m)
     else:
         items = await repo.list_all()
-    return ApiResponse.ok(data=[
-        {
-            "id": item.id,
-            "calendar_date": item.calendar_date.isoformat(),
-            "is_workday": item.is_workday,
-            "remark": item.remark,
-        }
-        for item in items
-    ])
+    return ApiResponse.ok(
+        data=[
+            {
+                "id": item.id,
+                "calendar_date": item.calendar_date.isoformat(),
+                "is_workday": item.is_workday,
+                "remark": item.remark,
+            }
+            for item in items
+        ]
+    )
 
 
 @router.get(
@@ -68,10 +68,7 @@ async def get_work_calendar_distribution(
     year, m = int(parts[0]), int(parts[1])
     service = ScheduleQueryService(session)
     items = await service.get_schedule_calendar_distribution(year, m)
-    payload = [
-        ScheduleCalendarDaySummary.model_validate(item).model_dump()
-        for item in items
-    ]
+    payload = [ScheduleCalendarDaySummary.model_validate(item).model_dump() for item in items]
     return ApiResponse.ok(data=payload)
 
 
@@ -92,16 +89,13 @@ async def get_work_calendar_day_detail(
     payload = ScheduleCalendarDayDetailResponse(
         summary=ScheduleCalendarDaySummary.model_validate(detail["summary"]),
         delivery_orders=[
-            ScheduleCalendarOrderItem.model_validate(item).model_dump()
-            for item in detail["delivery_orders"]
+            ScheduleCalendarOrderItem.model_validate(item).model_dump() for item in detail["delivery_orders"]
         ],
         trigger_orders=[
-            ScheduleCalendarOrderItem.model_validate(item).model_dump()
-            for item in detail["trigger_orders"]
+            ScheduleCalendarOrderItem.model_validate(item).model_dump() for item in detail["trigger_orders"]
         ],
         planned_start_orders=[
-            ScheduleCalendarOrderItem.model_validate(item).model_dump()
-            for item in detail["planned_start_orders"]
+            ScheduleCalendarOrderItem.model_validate(item).model_dump() for item in detail["planned_start_orders"]
         ],
     ).model_dump()
     return ApiResponse.ok(data=payload)

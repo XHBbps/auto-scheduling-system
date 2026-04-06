@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, Query
-from typing import Optional
-from sqlalchemy import select, and_, desc, func
+from sqlalchemy import and_, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.auth import CurrentUserIdentity, require_permission
@@ -23,14 +22,14 @@ require_data_source_view_permission = require_permission("data_source.view")
     response_model=ApiResponse[PageResult[ProductionOrderHistoryItemResponse]],
 )
 async def list_production_orders(
-    production_order_no: Optional[str] = None,
-    material_no: Optional[str] = None,
-    machine_model: Optional[str] = None,
-    order_status: Optional[str] = None,
+    production_order_no: str | None = None,
+    material_no: str | None = None,
+    machine_model: str | None = None,
+    order_status: str | None = None,
     page_no: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    sort_field: Optional[str] = None,
-    sort_order: Optional[str] = None,
+    sort_field: str | None = None,
+    sort_order: str | None = None,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_data_source_view_permission),
 ):
@@ -81,26 +80,28 @@ async def list_production_orders(
     )
     items = (await session.execute(stmt)).scalars().all()
 
-    return ApiResponse.ok(data={
-        "total": total,
-        "page_no": page_no,
-        "page_size": page_size,
-        "items": [
-            {
-                "id": i.id,
-                "production_order_no": i.production_order_no,
-                "material_no": i.material_no,
-                "material_desc": i.material_desc,
-                "machine_model": i.machine_model,
-                "plant": i.plant,
-                "processing_dept": i.processing_dept,
-                "start_time_actual": i.start_time_actual.isoformat() if i.start_time_actual else None,
-                "finish_time_actual": i.finish_time_actual.isoformat() if i.finish_time_actual else None,
-                "production_qty": float(i.production_qty) if i.production_qty else None,
-                "order_status": i.order_status,
-                "sales_order_no": i.sales_order_no,
-                "created_at": i.created_at.isoformat() if i.created_at else None,
-            }
-            for i in items
-        ],
-    })
+    return ApiResponse.ok(
+        data={
+            "total": total,
+            "page_no": page_no,
+            "page_size": page_size,
+            "items": [
+                {
+                    "id": i.id,
+                    "production_order_no": i.production_order_no,
+                    "material_no": i.material_no,
+                    "material_desc": i.material_desc,
+                    "machine_model": i.machine_model,
+                    "plant": i.plant,
+                    "processing_dept": i.processing_dept,
+                    "start_time_actual": i.start_time_actual.isoformat() if i.start_time_actual else None,
+                    "finish_time_actual": i.finish_time_actual.isoformat() if i.finish_time_actual else None,
+                    "production_qty": float(i.production_qty) if i.production_qty else None,
+                    "order_status": i.order_status,
+                    "sales_order_no": i.sales_order_no,
+                    "created_at": i.created_at.isoformat() if i.created_at else None,
+                }
+                for i in items
+            ],
+        }
+    )

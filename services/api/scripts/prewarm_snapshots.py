@@ -25,8 +25,7 @@ async def prewarm_snapshots() -> None:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
-    )
+    from app.common.logging_setup import configure_logging
+
+    configure_logging()
     asyncio.run(prewarm_snapshots())

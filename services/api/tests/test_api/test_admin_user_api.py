@@ -1,5 +1,5 @@
-from sqlalchemy import select
 import pytest
+from sqlalchemy import select
 
 from app.models.user_session import UserSession
 
@@ -241,8 +241,14 @@ async def test_admin_reset_password_revokes_existing_user_sessions(app_client, a
     assert reset_resp.json()["code"] == 0
 
     sessions = (
-        await db_session.execute(select(UserSession).where(UserSession.user_id == user_id).order_by(UserSession.id.asc()))
-    ).scalars().all()
+        (
+            await db_session.execute(
+                select(UserSession).where(UserSession.user_id == user_id).order_by(UserSession.id.asc())
+            )
+        )
+        .scalars()
+        .all()
+    )
     assert sessions
     assert all(item.revoked_at is not None for item in sessions)
 
@@ -407,8 +413,14 @@ async def test_permission_matrix_endpoint_returns_roles_permissions_and_bindings
 
     user_view_item = next(item for item in matrix_body["data"]["permissions"] if item["code"] == "user.view")
     role_view_item = next(item for item in matrix_body["data"]["permissions"] if item["code"] == "role.view")
-    assert any(binding["role_code"] == "matrix-role" and binding["assigned"] is True for binding in user_view_item["role_bindings"])
-    assert any(binding["role_code"] == "matrix-role" and binding["assigned"] is True for binding in role_view_item["role_bindings"])
+    assert any(
+        binding["role_code"] == "matrix-role" and binding["assigned"] is True
+        for binding in user_view_item["role_bindings"]
+    )
+    assert any(
+        binding["role_code"] == "matrix-role" and binding["assigned"] is True
+        for binding in role_view_item["role_bindings"]
+    )
 
 
 @pytest.mark.asyncio
@@ -424,10 +436,28 @@ async def test_permission_linkage_endpoint_returns_route_bindings(app_client):
     schedule_view_item = next(item for item in linkage_body["data"]["items"] if item["code"] == "schedule.view")
     issue_view_item = next(item for item in linkage_body["data"]["items"] if item["code"] == "issue.view")
 
-    assert any(route["path"] == "/api/admin/users" and "GET" in route["methods"] for route in user_view_item["linked_routes"])
-    assert any(route["path"] == "/api/admin/permission-linkage" and "GET" in route["methods"] for route in permission_view_item["linked_routes"])
-    assert any(route["path"] == "/api/admin/permission-matrix" and "GET" in route["methods"] for route in permission_view_item["linked_routes"])
-    assert any(route["path"] == "/api/admin/permission-matrix" and "GET" in route["methods"] for route in role_view_item["linked_routes"])
-    assert any(route["path"] == "/api/schedules" and "GET" in route["methods"] for route in schedule_view_item["linked_routes"])
-    assert any(route["path"] == "/api/dashboard/overview" and "GET" in route["methods"] for route in schedule_view_item["linked_routes"])
-    assert any(route["path"] == "/api/issues" and "GET" in route["methods"] for route in issue_view_item["linked_routes"])
+    assert any(
+        route["path"] == "/api/admin/users" and "GET" in route["methods"] for route in user_view_item["linked_routes"]
+    )
+    assert any(
+        route["path"] == "/api/admin/permission-linkage" and "GET" in route["methods"]
+        for route in permission_view_item["linked_routes"]
+    )
+    assert any(
+        route["path"] == "/api/admin/permission-matrix" and "GET" in route["methods"]
+        for route in permission_view_item["linked_routes"]
+    )
+    assert any(
+        route["path"] == "/api/admin/permission-matrix" and "GET" in route["methods"]
+        for route in role_view_item["linked_routes"]
+    )
+    assert any(
+        route["path"] == "/api/schedules" and "GET" in route["methods"] for route in schedule_view_item["linked_routes"]
+    )
+    assert any(
+        route["path"] == "/api/dashboard/overview" and "GET" in route["methods"]
+        for route in schedule_view_item["linked_routes"]
+    )
+    assert any(
+        route["path"] == "/api/issues" and "GET" in route["methods"] for route in issue_view_item["linked_routes"]
+    )

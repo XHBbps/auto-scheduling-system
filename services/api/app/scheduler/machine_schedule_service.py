@@ -2,17 +2,16 @@ import logging
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 
-from app.common.datetime_utils import utc_now
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.common.calendar_utils import subtract_workdays
-from app.models.sales_plan import SalesPlanOrderLineSrc
-from app.models.machine_schedule_result import MachineScheduleResult
 from app.baseline.assembly_time_default_service import AssemblyTimeDefaultService
+from app.common.calendar_utils import subtract_workdays
+from app.common.datetime_utils import utc_now
+from app.models.machine_schedule_result import MachineScheduleResult
+from app.models.sales_plan import SalesPlanOrderLineSrc
+from app.repository.assembly_time_repo import AssemblyTimeRepo
 from app.repository.machine_cycle_baseline_repo import MachineCycleBaselineRepo
 from app.repository.machine_schedule_result_repo import MachineScheduleResultRepo
-from app.repository.assembly_time_repo import AssemblyTimeRepo
 from app.repository.work_calendar_repo import WorkCalendarRepo
 
 logger = logging.getLogger(__name__)
@@ -38,9 +37,7 @@ class MachineScheduleService:
             return None
 
         # Get machine cycle
-        machine_cycle, is_default_cycle = await self._get_machine_cycle(
-            order.product_model, order.quantity
-        )
+        machine_cycle, is_default_cycle = await self._get_machine_cycle(order.product_model, order.quantity)
 
         # Get final assembly time
         assembly_days, is_default_assembly = await self._get_final_assembly_time(
@@ -49,10 +46,7 @@ class MachineScheduleService:
 
         # Compute dates
         delivery = order.confirmed_delivery_date
-        if isinstance(delivery, datetime):
-            delivery_date = delivery.date()
-        else:
-            delivery_date = delivery
+        delivery_date = delivery.date() if isinstance(delivery, datetime) else delivery
 
         # Load calendar for the range
         start_range = delivery_date - timedelta(days=int(machine_cycle) * 2 + 60)
@@ -99,9 +93,7 @@ class MachineScheduleService:
         result = await self.result_repo.upsert_by_order_line_id(order_line_id, data)
         return result
 
-    async def _get_machine_cycle(
-        self, machine_model: str | None, quantity: Decimal | None
-    ) -> tuple[Decimal, bool]:
+    async def _get_machine_cycle(self, machine_model: str | None, quantity: Decimal | None) -> tuple[Decimal, bool]:
         if not machine_model:
             return _DEFAULT_MACHINE_CYCLE_DAYS, True
 

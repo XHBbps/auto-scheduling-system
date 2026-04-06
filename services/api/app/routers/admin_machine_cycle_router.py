@@ -1,6 +1,4 @@
-
 from decimal import Decimal
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import and_, func, select
@@ -35,13 +33,13 @@ require_settings_manage_permission = require_permission("settings.manage")
     response_model=ApiResponse[PageResult[MachineCycleBaselineItemResponse]],
 )
 async def list_machine_cycle_baselines(
-    machine_model: Optional[str] = None,
-    product_series: Optional[str] = None,
-    is_active: Optional[bool] = None,
+    machine_model: str | None = None,
+    product_series: str | None = None,
+    is_active: bool | None = None,
     page_no: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    sort_field: Optional[str] = None,
-    sort_order: Optional[str] = None,
+    sort_field: str | None = None,
+    sort_order: str | None = None,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_settings_manage_permission),
 ):
@@ -83,24 +81,26 @@ async def list_machine_cycle_baselines(
     )
     result = await session.execute(stmt)
     items = result.scalars().all()
-    return ApiResponse.ok(data={
-        "total": total,
-        "page_no": page_no,
-        "page_size": page_size,
-        "items": [
-            {
-                "id": item.id,
-                "product_series": item.product_series,
-                "machine_model": item.machine_model,
-                "order_qty": float(item.order_qty),
-                "cycle_days_median": float(item.cycle_days_median),
-                "sample_count": item.sample_count,
-                "is_active": item.is_active,
-                "remark": item.remark,
-            }
-            for item in items
-        ],
-    })
+    return ApiResponse.ok(
+        data={
+            "total": total,
+            "page_no": page_no,
+            "page_size": page_size,
+            "items": [
+                {
+                    "id": item.id,
+                    "product_series": item.product_series,
+                    "machine_model": item.machine_model,
+                    "order_qty": float(item.order_qty),
+                    "cycle_days_median": float(item.cycle_days_median),
+                    "sample_count": item.sample_count,
+                    "is_active": item.is_active,
+                    "remark": item.remark,
+                }
+                for item in items
+            ],
+        }
+    )
 
 
 @router.post(

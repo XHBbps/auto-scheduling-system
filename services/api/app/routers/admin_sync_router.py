@@ -12,18 +12,17 @@ from app.database import get_session
 from app.models.bom_backfill_queue import BomBackfillQueue
 from app.repository.bom_backfill_queue_repo import BomBackfillQueueRepo
 from app.repository.sales_plan_repo import SalesPlanRepo
-from app.sync_scheduler import SyncSchedulerControlService
 from app.schemas.admin_schemas import (
-    BomBackfillQueueRetryRequest,
     BomBackfillQueuePageResponse,
+    BomBackfillQueueRetryRequest,
     RetryQueueResponse,
     SyncBomRequest,
     SyncObservabilityResponse,
     SyncResearchRequest,
-    SyncSchedulerStatusResponse,
-    SyncTriggerResponse,
     SyncSalesPlanRequest,
     SyncScheduleRequest,
+    SyncSchedulerStatusResponse,
+    SyncTriggerResponse,
 )
 from app.services.sync_job_observability_service import SyncJobObservabilityService
 from app.sync.bom_backfill_queue_service import serialize_bom_backfill_queue_item
@@ -38,6 +37,7 @@ from app.sync.sync_job_message_templates import (
     research_trigger_message,
     sales_plan_trigger_message,
 )
+from app.sync_scheduler import SyncSchedulerControlService
 
 logger = logging.getLogger(__name__)
 
@@ -81,12 +81,12 @@ async def sync_sales_plan(
             }
         )
     except ValueError as exc:
-        raise BizException(ErrorCode.BIZ_VALIDATION_FAILED, str(exc))
+        raise BizException(ErrorCode.BIZ_VALIDATION_FAILED, str(exc)) from exc
     except BizException:
         raise
     except Exception as e:
         logger.error("Sales plan sync trigger failed: %s", e, exc_info=True)
-        raise BizException(ErrorCode.EXTERNAL_API_FAILED, "销售计划同步触发失败，请稍后重试")
+        raise BizException(ErrorCode.EXTERNAL_API_FAILED, "销售计划同步触发失败，请稍后重试") from e
 
 
 @router.post(
@@ -145,7 +145,7 @@ async def sync_bom(
         raise
     except Exception as e:
         logger.error("BOM sync trigger failed: %s", e, exc_info=True)
-        raise BizException(ErrorCode.EXTERNAL_API_FAILED, "BOM 同步触发失败，请稍后重试")
+        raise BizException(ErrorCode.EXTERNAL_API_FAILED, "BOM 同步触发失败，请稍后重试") from e
 
 
 @router.post(
@@ -176,7 +176,7 @@ async def sync_production_orders(
         raise
     except Exception as e:
         logger.error("Production order sync trigger failed: %s", e, exc_info=True)
-        raise BizException(ErrorCode.EXTERNAL_API_FAILED, "生产订单同步触发失败，请稍后重试")
+        raise BizException(ErrorCode.EXTERNAL_API_FAILED, "生产订单同步触发失败，请稍后重试") from e
 
 
 @router.post(
@@ -210,7 +210,7 @@ async def sync_research(
         raise
     except Exception as e:
         logger.error("Research sync trigger failed: %s", e, exc_info=True)
-        raise BizException(ErrorCode.EXTERNAL_API_FAILED, "研究所数据同步触发失败，请稍后重试")
+        raise BizException(ErrorCode.EXTERNAL_API_FAILED, "研究所数据同步触发失败，请稍后重试") from e
 
 
 @router.get(
@@ -301,9 +301,7 @@ async def retry_bom_backfill_queue_items(
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_sync_manage_permission),
 ):
-    items = (
-        await session.execute(select(BomBackfillQueue).where(BomBackfillQueue.id.in_(req.ids)))
-    ).scalars().all()
+    items = (await session.execute(select(BomBackfillQueue).where(BomBackfillQueue.id.in_(req.ids)))).scalars().all()
     changed = 0
     for item in items:
         if item.status not in {

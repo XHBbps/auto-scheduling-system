@@ -1,4 +1,5 @@
 from typing import Any
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,12 +11,8 @@ class MachineCycleHistoryRepo(BaseRepository[MachineCycleHistorySrc]):
     def __init__(self, session: AsyncSession):
         super().__init__(session, MachineCycleHistorySrc)
 
-    async def upsert_by_detail_id(
-        self, detail_id: str, data: dict[str, Any]
-    ) -> MachineCycleHistorySrc:
-        stmt = select(MachineCycleHistorySrc).where(
-            MachineCycleHistorySrc.detail_id == detail_id
-        )
+    async def upsert_by_detail_id(self, detail_id: str, data: dict[str, Any]) -> MachineCycleHistorySrc:
+        stmt = select(MachineCycleHistorySrc).where(MachineCycleHistorySrc.detail_id == detail_id)
         result = await self.session.execute(stmt)
         existing = result.scalar_one_or_none()
         if existing:

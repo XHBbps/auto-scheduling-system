@@ -1,6 +1,7 @@
-import pytest
 import httpx
+import pytest
 import respx
+
 from app.integration.sap_bom_client import SapBomClient
 
 
@@ -16,46 +17,49 @@ def client():
 @pytest.mark.asyncio
 async def test_fetch_bom_success(client):
     respx.post("https://sap.example.com").mock(
-        return_value=httpx.Response(200, json={
-            "ES_RET": {"CODE": "", "MSG": ""},
-            "LT_BOM001": {
-                "item": [
-                    {
-                        "ZJBM": "MACH001",
-                        "ZJMS": "压力机",
-                        "WLBH": "MACH001",
-                        "WLBHMS": "压力机整机",
-                        "GC": "1000",
-                        "BOMZJ": "MACH001",
-                        "BOMMS": "压力机整机",
-                        "LJLX": "自产件",
-                        "ZJSL": "1",
-                    },
-                    {
-                        "ZJBM": "MACH001",
-                        "ZJMS": "压力机",
-                        "WLBH": "MACH001",
-                        "WLBHMS": "压力机整机",
-                        "GC": "1000",
-                        "BOMZJ": "COMP001",
-                        "BOMMS": "机身MC1-80",
-                        "LJLX": "自产件",
-                        "ZJSL": "1",
-                    },
-                    {
-                        "ZJBM": "MACH001",
-                        "ZJMS": "压力机",
-                        "WLBH": "MACH001",
-                        "WLBHMS": "压力机整机",
-                        "GC": "1000",
-                        "BOMZJ": "COMP002",
-                        "BOMMS": "电气柜",
-                        "LJLX": "外购件",
-                        "ZJSL": "2",
-                    },
-                ]
-            }
-        })
+        return_value=httpx.Response(
+            200,
+            json={
+                "ES_RET": {"CODE": "", "MSG": ""},
+                "LT_BOM001": {
+                    "item": [
+                        {
+                            "ZJBM": "MACH001",
+                            "ZJMS": "压力机",
+                            "WLBH": "MACH001",
+                            "WLBHMS": "压力机整机",
+                            "GC": "1000",
+                            "BOMZJ": "MACH001",
+                            "BOMMS": "压力机整机",
+                            "LJLX": "自产件",
+                            "ZJSL": "1",
+                        },
+                        {
+                            "ZJBM": "MACH001",
+                            "ZJMS": "压力机",
+                            "WLBH": "MACH001",
+                            "WLBHMS": "压力机整机",
+                            "GC": "1000",
+                            "BOMZJ": "COMP001",
+                            "BOMMS": "机身MC1-80",
+                            "LJLX": "自产件",
+                            "ZJSL": "1",
+                        },
+                        {
+                            "ZJBM": "MACH001",
+                            "ZJMS": "压力机",
+                            "WLBH": "MACH001",
+                            "WLBHMS": "压力机整机",
+                            "GC": "1000",
+                            "BOMZJ": "COMP002",
+                            "BOMMS": "电气柜",
+                            "LJLX": "外购件",
+                            "ZJSL": "2",
+                        },
+                    ]
+                },
+            },
+        )
     )
 
     rows = await client.fetch_bom(machine_material_no="MACH001", plant="1000")
@@ -71,10 +75,9 @@ async def test_fetch_bom_success(client):
 @pytest.mark.asyncio
 async def test_fetch_bom_error(client):
     respx.post("https://sap.example.com").mock(
-        return_value=httpx.Response(200, json={
-            "ES_RET": {"CODE": "E", "MSG": "物料号不存在"},
-            "LT_BOM001": {"item": []}
-        })
+        return_value=httpx.Response(
+            200, json={"ES_RET": {"CODE": "E", "MSG": "物料号不存在"}, "LT_BOM001": {"item": []}}
+        )
     )
     with pytest.raises(RuntimeError, match="物料号不存在"):
         await client.fetch_bom(machine_material_no="BADMAT", plant="1000")
@@ -84,24 +87,27 @@ async def test_fetch_bom_error(client):
 @pytest.mark.asyncio
 async def test_fetch_bom_normalizes_numeric_ids_to_string(client):
     respx.post("https://sap.example.com").mock(
-        return_value=httpx.Response(200, json={
-            "ES_RET": {"CODE": "", "MSG": ""},
-            "LT_BOM001": {
-                "item": [
-                    {
-                        "ZJBM": 80077824,
-                        "ZJMS": "整机",
-                        "WLBH": 30683056,
-                        "WLBHMS": "机身",
-                        "GC": 1100,
-                        "BOMZJ": 10005721,
-                        "BOMMS": "电缆线",
-                        "LJLX": "外购件",
-                        "ZJSL": "1.7",
-                    }
-                ]
-            }
-        })
+        return_value=httpx.Response(
+            200,
+            json={
+                "ES_RET": {"CODE": "", "MSG": ""},
+                "LT_BOM001": {
+                    "item": [
+                        {
+                            "ZJBM": 80077824,
+                            "ZJMS": "整机",
+                            "WLBH": 30683056,
+                            "WLBHMS": "机身",
+                            "GC": 1100,
+                            "BOMZJ": 10005721,
+                            "BOMMS": "电缆线",
+                            "LJLX": "外购件",
+                            "ZJSL": "1.7",
+                        }
+                    ]
+                },
+            },
+        )
     )
 
     rows = await client.fetch_bom(machine_material_no="MACH001", plant="1000")
@@ -117,24 +123,27 @@ async def test_fetch_bom_retries_on_retryable_status(client):
     route = respx.post("https://sap.example.com").mock(
         side_effect=[
             httpx.Response(502, json={"message": "bad gateway"}),
-            httpx.Response(200, json={
-                "ES_RET": {"CODE": "", "MSG": ""},
-                "LT_BOM001": {
-                    "item": [
-                        {
-                            "ZJBM": "MACH001",
-                            "ZJMS": "整机",
-                            "WLBH": "MACH001",
-                            "WLBHMS": "整机",
-                            "GC": "1000",
-                            "BOMZJ": "COMP001",
-                            "BOMMS": "部件",
-                            "LJLX": "自产件",
-                            "ZJSL": "1",
-                        }
-                    ]
-                }
-            }),
+            httpx.Response(
+                200,
+                json={
+                    "ES_RET": {"CODE": "", "MSG": ""},
+                    "LT_BOM001": {
+                        "item": [
+                            {
+                                "ZJBM": "MACH001",
+                                "ZJMS": "整机",
+                                "WLBH": "MACH001",
+                                "WLBHMS": "整机",
+                                "GC": "1000",
+                                "BOMZJ": "COMP001",
+                                "BOMMS": "部件",
+                                "LJLX": "自产件",
+                                "ZJSL": "1",
+                            }
+                        ]
+                    },
+                },
+            ),
         ]
     )
 

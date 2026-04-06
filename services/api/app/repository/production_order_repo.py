@@ -1,4 +1,5 @@
 from typing import Any
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,9 +11,7 @@ class ProductionOrderRepo(BaseRepository[ProductionOrderHistorySrc]):
     def __init__(self, session: AsyncSession):
         super().__init__(session, ProductionOrderHistorySrc)
 
-    async def upsert_by_order_no(
-        self, production_order_no: str, data: dict[str, Any]
-    ) -> ProductionOrderHistorySrc:
+    async def upsert_by_order_no(self, production_order_no: str, data: dict[str, Any]) -> ProductionOrderHistorySrc:
         stmt = select(ProductionOrderHistorySrc).where(
             ProductionOrderHistorySrc.production_order_no == production_order_no
         )

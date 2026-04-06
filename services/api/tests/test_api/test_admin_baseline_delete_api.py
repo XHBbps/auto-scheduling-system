@@ -1,5 +1,6 @@
-import pytest
 from decimal import Decimal
+
+import pytest
 
 from app.common.exceptions import ErrorCode
 from app.models.machine_cycle_history import MachineCycleHistorySrc
@@ -7,12 +8,15 @@ from app.models.machine_cycle_history import MachineCycleHistorySrc
 
 @pytest.mark.asyncio
 async def test_delete_assembly_time(app_client):
-    create_resp = await app_client.post("/api/admin/assembly-times", json={
-        "machine_model": "MC1-80",
-        "assembly_name": "机身",
-        "assembly_time_days": 2,
-        "production_sequence": 1,
-    })
+    create_resp = await app_client.post(
+        "/api/admin/assembly-times",
+        json={
+            "machine_model": "MC1-80",
+            "assembly_name": "机身",
+            "assembly_time_days": 2,
+            "production_sequence": 1,
+        },
+    )
     create_body = create_resp.json()
     record_id = create_body["data"]["id"]
 
@@ -28,14 +32,17 @@ async def test_delete_assembly_time(app_client):
 
 @pytest.mark.asyncio
 async def test_delete_machine_cycle_baseline(app_client):
-    create_resp = await app_client.post("/api/admin/machine-cycle-baselines", json={
-        "machine_model": "MC2-100",
-        "product_series": "MC2",
-        "order_qty": 1,
-        "cycle_days_median": 30,
-        "sample_count": 5,
-        "is_active": True,
-    })
+    create_resp = await app_client.post(
+        "/api/admin/machine-cycle-baselines",
+        json={
+            "machine_model": "MC2-100",
+            "product_series": "MC2",
+            "order_qty": 1,
+            "cycle_days_median": 30,
+            "sample_count": 5,
+            "is_active": True,
+        },
+    )
     create_body = create_resp.json()
     record_id = create_body["data"]["id"]
 
@@ -51,15 +58,18 @@ async def test_delete_machine_cycle_baseline(app_client):
 
 @pytest.mark.asyncio
 async def test_delete_part_cycle_baseline(app_client):
-    create_resp = await app_client.post("/api/admin/part-cycle-baselines", json={
-        "part_type": "机身体焊接件",
-        "material_desc": "机身体焊接件",
-        "machine_model": "MC2-100",
-        "ref_batch_qty": 1,
-        "cycle_days": 10,
-        "unit_cycle_days": 1,
-        "is_active": True,
-    })
+    create_resp = await app_client.post(
+        "/api/admin/part-cycle-baselines",
+        json={
+            "part_type": "机身体焊接件",
+            "material_desc": "机身体焊接件",
+            "machine_model": "MC2-100",
+            "ref_batch_qty": 1,
+            "cycle_days": 10,
+            "unit_cycle_days": 1,
+            "is_active": True,
+        },
+    )
     create_body = create_resp.json()
     record_id = create_body["data"]["id"]
 
@@ -99,29 +109,31 @@ async def test_delete_part_cycle_baseline_not_found_returns_not_found_code(app_c
 
 @pytest.mark.asyncio
 async def test_rebuild_machine_cycle_baseline(app_client, db_session):
-    db_session.add_all([
-        MachineCycleHistorySrc(
-            detail_id="RB-001",
-            machine_model="MC3-200",
-            product_series="MC3",
-            order_qty=Decimal("1"),
-            cycle_days=Decimal("50"),
-        ),
-        MachineCycleHistorySrc(
-            detail_id="RB-002",
-            machine_model="MC3-200",
-            product_series="MC3",
-            order_qty=Decimal("1"),
-            cycle_days=Decimal("70"),
-        ),
-        MachineCycleHistorySrc(
-            detail_id="RB-003",
-            machine_model="MC3-200",
-            product_series="MC3",
-            order_qty=Decimal("1"),
-            cycle_days=Decimal("60"),
-        ),
-    ])
+    db_session.add_all(
+        [
+            MachineCycleHistorySrc(
+                detail_id="RB-001",
+                machine_model="MC3-200",
+                product_series="MC3",
+                order_qty=Decimal("1"),
+                cycle_days=Decimal("50"),
+            ),
+            MachineCycleHistorySrc(
+                detail_id="RB-002",
+                machine_model="MC3-200",
+                product_series="MC3",
+                order_qty=Decimal("1"),
+                cycle_days=Decimal("70"),
+            ),
+            MachineCycleHistorySrc(
+                detail_id="RB-003",
+                machine_model="MC3-200",
+                product_series="MC3",
+                order_qty=Decimal("1"),
+                cycle_days=Decimal("60"),
+            ),
+        ]
+    )
     await db_session.commit()
 
     rebuild_resp = await app_client.post("/api/admin/machine-cycle-baselines/rebuild")
@@ -144,14 +156,17 @@ async def test_rebuild_machine_cycle_baseline(app_client, db_session):
 @pytest.mark.asyncio
 async def test_list_machine_cycle_baseline_pagination(app_client):
     for idx in range(3):
-        await app_client.post("/api/admin/machine-cycle-baselines", json={
-            "machine_model": f"MC9-10{idx}",
-            "product_series": "MC9",
-            "order_qty": 1,
-            "cycle_days_median": 20 + idx,
-            "sample_count": 2,
-            "is_active": True,
-        })
+        await app_client.post(
+            "/api/admin/machine-cycle-baselines",
+            json={
+                "machine_model": f"MC9-10{idx}",
+                "product_series": "MC9",
+                "order_qty": 1,
+                "cycle_days_median": 20 + idx,
+                "sample_count": 2,
+                "is_active": True,
+            },
+        )
 
     list_resp = await app_client.get("/api/admin/machine-cycle-baselines?page_no=1&page_size=2")
     list_body = list_resp.json()
@@ -165,33 +180,34 @@ async def test_list_machine_cycle_baseline_pagination(app_client):
 
 @pytest.mark.asyncio
 async def test_list_machine_cycle_baseline_supports_sort_by_remark(app_client):
-    await app_client.post("/api/admin/machine-cycle-baselines", json={
-        "machine_model": "MC-REMARK-Z",
-        "product_series": "MC-R",
-        "order_qty": 1,
-        "cycle_days_median": 20,
-        "sample_count": 2,
-        "is_active": True,
-        "remark": "alpha",
-    })
-    await app_client.post("/api/admin/machine-cycle-baselines", json={
-        "machine_model": "MC-REMARK-A",
-        "product_series": "MC-R",
-        "order_qty": 1,
-        "cycle_days_median": 21,
-        "sample_count": 2,
-        "is_active": True,
-        "remark": "beta",
-    })
-
-    list_resp = await app_client.get(
-        "/api/admin/machine-cycle-baselines?sort_field=remark&sort_order=asc&page_size=20"
+    await app_client.post(
+        "/api/admin/machine-cycle-baselines",
+        json={
+            "machine_model": "MC-REMARK-Z",
+            "product_series": "MC-R",
+            "order_qty": 1,
+            "cycle_days_median": 20,
+            "sample_count": 2,
+            "is_active": True,
+            "remark": "alpha",
+        },
     )
+    await app_client.post(
+        "/api/admin/machine-cycle-baselines",
+        json={
+            "machine_model": "MC-REMARK-A",
+            "product_series": "MC-R",
+            "order_qty": 1,
+            "cycle_days_median": 21,
+            "sample_count": 2,
+            "is_active": True,
+            "remark": "beta",
+        },
+    )
+
+    list_resp = await app_client.get("/api/admin/machine-cycle-baselines?sort_field=remark&sort_order=asc&page_size=20")
     list_body = list_resp.json()
 
     assert list_body["code"] == 0
-    items = [
-        item for item in list_body["data"]["items"]
-        if item["machine_model"] in {"MC-REMARK-Z", "MC-REMARK-A"}
-    ]
+    items = [item for item in list_body["data"]["items"] if item["machine_model"] in {"MC-REMARK-Z", "MC-REMARK-A"}]
     assert [item["remark"] for item in items] == ["alpha", "beta"]

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from datetime import date, datetime
-from typing import Any, Sequence
+from collections.abc import Sequence
+from datetime import date
+from typing import Any
 
 from app.common.datetime_utils import utc_now
 from app.common.enums import ScheduleStatus, WarningLevel

@@ -3,8 +3,8 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.common.text_parse_utils import normalize_assembly_name
 from app.baseline.assembly_time_default_service import AssemblyTimeDefaultService
+from app.common.text_parse_utils import normalize_assembly_name
 from app.repository.bom_relation_repo import BomRelationRepo
 
 logger = logging.getLogger(__name__)
@@ -50,14 +50,16 @@ class AssemblyIdentifyService:
         assemblies = []
         for name, bom_row in assembly_rows:
             at_record = assembly_time_map[name]
-            assemblies.append({
-                "assembly_name": name,
-                "production_sequence": at_record.production_sequence,
-                "assembly_time_days": at_record.assembly_time_days,
-                "is_default_time": at_record.is_default,
-                "bom_component_no": bom_row.bom_component_no,
-                "bom_component_desc": bom_row.bom_component_desc,
-            })
+            assemblies.append(
+                {
+                    "assembly_name": name,
+                    "production_sequence": at_record.production_sequence,
+                    "assembly_time_days": at_record.assembly_time_days,
+                    "is_default_time": at_record.is_default,
+                    "bom_component_no": bom_row.bom_component_no,
+                    "bom_component_desc": bom_row.bom_component_desc,
+                }
+            )
 
         # Sort by production_sequence
         assemblies.sort(key=lambda a: a["production_sequence"])

@@ -1,4 +1,6 @@
-from typing import TypeVar, Generic, Type, Sequence
+from collections.abc import Sequence
+from typing import Generic, TypeVar
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,7 +10,7 @@ ModelT = TypeVar("ModelT", bound=Base)
 
 
 class BaseRepository(Generic[ModelT]):
-    def __init__(self, session: AsyncSession, model_class: Type[ModelT]):
+    def __init__(self, session: AsyncSession, model_class: type[ModelT]):
         self.session = session
         self.model_class = model_class
 
@@ -34,9 +36,7 @@ class BaseRepository(Generic[ModelT]):
         await self.session.flush()
 
     async def count(self) -> int:
-        result = await self.session.execute(
-            select(func.count()).select_from(self.model_class)
-        )
+        result = await self.session.execute(select(func.count()).select_from(self.model_class))
         return result.scalar_one()
 
     async def exists_any(self) -> bool:

@@ -1,12 +1,11 @@
-from datetime import datetime, timezone
 import hashlib
-
-from app.common.datetime_utils import utc_now
+from datetime import UTC, datetime
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.common.datetime_utils import utc_now
 from app.models.role import Role
 from app.models.role_permission import RolePermission
 from app.models.user_account import UserAccount
@@ -22,7 +21,7 @@ class UserSessionRepo(BaseRepository[UserSession]):
     async def find_active_by_token(self, session_token: str, now: datetime | None = None) -> UserSession | None:
         current_time = now or utc_now()
         if current_time.tzinfo is not None:
-            current_time = current_time.astimezone(timezone.utc).replace(tzinfo=None)
+            current_time = current_time.astimezone(UTC).replace(tzinfo=None)
         token_hash = hashlib.sha256(session_token.encode("utf-8")).hexdigest()
         result = await self.session.execute(
             select(UserSession)
@@ -52,10 +51,10 @@ class UserSessionRepo(BaseRepository[UserSession]):
     ) -> int:
         current_time = now or utc_now()
         if current_time.tzinfo is not None:
-            current_time = current_time.astimezone(timezone.utc).replace(tzinfo=None)
+            current_time = current_time.astimezone(UTC).replace(tzinfo=None)
         revoked_time = revoked_at or current_time
         if revoked_time.tzinfo is not None:
-            revoked_time = revoked_time.astimezone(timezone.utc).replace(tzinfo=None)
+            revoked_time = revoked_time.astimezone(UTC).replace(tzinfo=None)
 
         stmt = (
             update(UserSession)

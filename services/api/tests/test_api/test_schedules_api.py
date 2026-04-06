@@ -1,6 +1,7 @@
-import pytest
+from datetime import date, datetime
 from decimal import Decimal
-from datetime import date, datetime, timedelta
+
+import pytest
 from sqlalchemy import func, select
 
 from app.models.bom_relation import BomRelationSrc
@@ -25,12 +26,18 @@ async def test_list_schedules_empty(app_client):
 
 @pytest.mark.asyncio
 async def test_list_schedules_with_data(app_client, db_session):
-    db_session.add(MachineScheduleResult(
-        order_line_id=1, contract_no="HT001", product_model="MC1-80",
-        schedule_status="scheduled", planned_start_date=datetime(2026, 4, 1),
-        planned_end_date=datetime(2026, 6, 30),
-        machine_cycle_days=Decimal("60"), machine_assembly_days=Decimal("3"),
-    ))
+    db_session.add(
+        MachineScheduleResult(
+            order_line_id=1,
+            contract_no="HT001",
+            product_model="MC1-80",
+            schedule_status="scheduled",
+            planned_start_date=datetime(2026, 4, 1),
+            planned_end_date=datetime(2026, 6, 30),
+            machine_cycle_days=Decimal("60"),
+            machine_assembly_days=Decimal("3"),
+        )
+    )
     await db_session.commit()
 
     resp = await app_client.get("/api/schedules")
@@ -41,36 +48,38 @@ async def test_list_schedules_with_data(app_client, db_session):
 
 @pytest.mark.asyncio
 async def test_list_schedules_and_detail_include_extended_sales_fields(app_client, db_session):
-    db_session.add(OrderScheduleSnapshot(
-        order_line_id=88,
-        contract_no="HT088",
-        customer_name="客户88",
-        product_series="MC",
-        product_model="MC-880",
-        product_name="高性能冲床",
-        material_no="MAT-088",
-        quantity=Decimal("2"),
-        order_type="3",
-        line_total_amount=Decimal("880000"),
-        order_date=datetime(2026, 3, 1, 0, 0, 0),
-        business_group="装备事业群",
-        custom_no="DZ-088",
-        sales_person_name="张三",
-        sales_branch_company="华东分公司",
-        sales_sub_branch="苏州支公司",
-        order_no="SO-088",
-        sap_code="SAP-088",
-        sap_line_no="000010",
-        confirmed_delivery_date=datetime(2026, 4, 20, 0, 0, 0),
-        drawing_released=True,
-        drawing_release_date=datetime(2026, 3, 5, 0, 0, 0),
-        custom_requirement="需要自动上料",
-        review_comment="优先排产",
-        schedule_status="scheduled",
-        warning_level="normal",
-        machine_cycle_days=Decimal("60"),
-        machine_assembly_days=Decimal("3"),
-    ))
+    db_session.add(
+        OrderScheduleSnapshot(
+            order_line_id=88,
+            contract_no="HT088",
+            customer_name="客户88",
+            product_series="MC",
+            product_model="MC-880",
+            product_name="高性能冲床",
+            material_no="MAT-088",
+            quantity=Decimal("2"),
+            order_type="3",
+            line_total_amount=Decimal("880000"),
+            order_date=datetime(2026, 3, 1, 0, 0, 0),
+            business_group="装备事业群",
+            custom_no="DZ-088",
+            sales_person_name="张三",
+            sales_branch_company="华东分公司",
+            sales_sub_branch="苏州支公司",
+            order_no="SO-088",
+            sap_code="SAP-088",
+            sap_line_no="000010",
+            confirmed_delivery_date=datetime(2026, 4, 20, 0, 0, 0),
+            drawing_released=True,
+            drawing_release_date=datetime(2026, 3, 5, 0, 0, 0),
+            custom_requirement="需要自动上料",
+            review_comment="优先排产",
+            schedule_status="scheduled",
+            warning_level="normal",
+            machine_cycle_days=Decimal("60"),
+            machine_assembly_days=Decimal("3"),
+        )
+    )
     await db_session.commit()
 
     list_resp = await app_client.get("/api/schedules")
@@ -100,16 +109,26 @@ async def test_list_schedules_and_detail_include_extended_sales_fields(app_clien
 
 @pytest.mark.asyncio
 async def test_list_schedules_filter(app_client, db_session):
-    db_session.add(MachineScheduleResult(
-        order_line_id=10, contract_no="HT010", product_model="MC1-80",
-        schedule_status="scheduled",
-        machine_cycle_days=Decimal("60"), machine_assembly_days=Decimal("3"),
-    ))
-    db_session.add(MachineScheduleResult(
-        order_line_id=11, contract_no="HT011", product_model="MC2-100",
-        schedule_status="pending_drawing",
-        machine_cycle_days=Decimal("90"), machine_assembly_days=Decimal("3"),
-    ))
+    db_session.add(
+        MachineScheduleResult(
+            order_line_id=10,
+            contract_no="HT010",
+            product_model="MC1-80",
+            schedule_status="scheduled",
+            machine_cycle_days=Decimal("60"),
+            machine_assembly_days=Decimal("3"),
+        )
+    )
+    db_session.add(
+        MachineScheduleResult(
+            order_line_id=11,
+            contract_no="HT011",
+            product_model="MC2-100",
+            schedule_status="pending_drawing",
+            machine_cycle_days=Decimal("90"),
+            machine_assembly_days=Decimal("3"),
+        )
+    )
     await db_session.commit()
 
     resp = await app_client.get("/api/schedules?schedule_status=scheduled")
@@ -120,18 +139,28 @@ async def test_list_schedules_filter(app_client, db_session):
 
 @pytest.mark.asyncio
 async def test_list_schedules_filter_by_confirmed_delivery_date_range(app_client, db_session):
-    db_session.add(MachineScheduleResult(
-        order_line_id=20, contract_no="HT020", product_model="MC1-80",
-        schedule_status="scheduled",
-        confirmed_delivery_date=datetime(2025, 3, 15, 0, 0, 0),
-        machine_cycle_days=Decimal("60"), machine_assembly_days=Decimal("3"),
-    ))
-    db_session.add(MachineScheduleResult(
-        order_line_id=21, contract_no="HT021", product_model="MC2-100",
-        schedule_status="scheduled",
-        confirmed_delivery_date=datetime(2025, 4, 2, 0, 0, 0),
-        machine_cycle_days=Decimal("90"), machine_assembly_days=Decimal("3"),
-    ))
+    db_session.add(
+        MachineScheduleResult(
+            order_line_id=20,
+            contract_no="HT020",
+            product_model="MC1-80",
+            schedule_status="scheduled",
+            confirmed_delivery_date=datetime(2025, 3, 15, 0, 0, 0),
+            machine_cycle_days=Decimal("60"),
+            machine_assembly_days=Decimal("3"),
+        )
+    )
+    db_session.add(
+        MachineScheduleResult(
+            order_line_id=21,
+            contract_no="HT021",
+            product_model="MC2-100",
+            schedule_status="scheduled",
+            confirmed_delivery_date=datetime(2025, 4, 2, 0, 0, 0),
+            machine_cycle_days=Decimal("90"),
+            machine_assembly_days=Decimal("3"),
+        )
+    )
     await db_session.commit()
 
     resp = await app_client.get("/api/schedules?date_from=2025-03-01&date_to=2025-03-31")
@@ -143,36 +172,38 @@ async def test_list_schedules_filter_by_confirmed_delivery_date_range(app_client
 
 @pytest.mark.asyncio
 async def test_list_schedules_supports_sorting_snapshot_text_fields(app_client, db_session):
-    db_session.add_all([
-        OrderScheduleSnapshot(
-            order_line_id=301,
-            contract_no="HT301",
-            product_model="MC-301",
-            material_no="MAT-301",
-            quantity=Decimal("1"),
-            order_no="SO-301",
-            confirmed_delivery_date=datetime(2026, 4, 10, 0, 0, 0),
-            drawing_released=True,
-            schedule_status="scheduled",
-            warning_level="normal",
-            custom_requirement="A类定制",
-            review_comment="A评审",
-        ),
-        OrderScheduleSnapshot(
-            order_line_id=302,
-            contract_no="HT302",
-            product_model="MC-302",
-            material_no="MAT-302",
-            quantity=Decimal("1"),
-            order_no="SO-302",
-            confirmed_delivery_date=datetime(2026, 4, 11, 0, 0, 0),
-            drawing_released=True,
-            schedule_status="scheduled",
-            warning_level="normal",
-            custom_requirement="B类定制",
-            review_comment="B评审",
-        ),
-    ])
+    db_session.add_all(
+        [
+            OrderScheduleSnapshot(
+                order_line_id=301,
+                contract_no="HT301",
+                product_model="MC-301",
+                material_no="MAT-301",
+                quantity=Decimal("1"),
+                order_no="SO-301",
+                confirmed_delivery_date=datetime(2026, 4, 10, 0, 0, 0),
+                drawing_released=True,
+                schedule_status="scheduled",
+                warning_level="normal",
+                custom_requirement="A类定制",
+                review_comment="A评审",
+            ),
+            OrderScheduleSnapshot(
+                order_line_id=302,
+                contract_no="HT302",
+                product_model="MC-302",
+                material_no="MAT-302",
+                quantity=Decimal("1"),
+                order_no="SO-302",
+                confirmed_delivery_date=datetime(2026, 4, 11, 0, 0, 0),
+                drawing_released=True,
+                schedule_status="scheduled",
+                warning_level="normal",
+                custom_requirement="B类定制",
+                review_comment="B评审",
+            ),
+        ]
+    )
     await db_session.commit()
 
     resp = await app_client.get(
@@ -194,20 +225,36 @@ async def test_list_schedules_supports_sorting_snapshot_text_fields(app_client, 
 
 @pytest.mark.asyncio
 async def test_schedule_detail(app_client, db_session):
-    db_session.add(MachineScheduleResult(
-        order_line_id=99, contract_no="HT002", product_model="MC1-80",
-        schedule_status="scheduled",
-        machine_cycle_days=Decimal("60"), machine_assembly_days=Decimal("3"),
-    ))
-    db_session.add(PartScheduleResult(
-        order_line_id=99, assembly_name="机身", production_sequence=1,
-        parent_material_no="ASM_BODY", parent_name="机身", node_level=1,
-        bom_path="机身(ASM_BODY) / 机身体焊接件(P001)",
-        bom_path_key="root:ASM_BODY>1",
-        part_material_no="P001", part_name="机身体焊接件", is_key_part=True,
-        part_cycle_days=Decimal("15"), part_cycle_is_default=False, part_cycle_match_rule="exact_material",
-        key_part_material_no="P001", key_part_cycle_days=Decimal("15"),
-    ))
+    db_session.add(
+        MachineScheduleResult(
+            order_line_id=99,
+            contract_no="HT002",
+            product_model="MC1-80",
+            schedule_status="scheduled",
+            machine_cycle_days=Decimal("60"),
+            machine_assembly_days=Decimal("3"),
+        )
+    )
+    db_session.add(
+        PartScheduleResult(
+            order_line_id=99,
+            assembly_name="机身",
+            production_sequence=1,
+            parent_material_no="ASM_BODY",
+            parent_name="机身",
+            node_level=1,
+            bom_path="机身(ASM_BODY) / 机身体焊接件(P001)",
+            bom_path_key="root:ASM_BODY>1",
+            part_material_no="P001",
+            part_name="机身体焊接件",
+            is_key_part=True,
+            part_cycle_days=Decimal("15"),
+            part_cycle_is_default=False,
+            part_cycle_match_rule="exact_material",
+            key_part_material_no="P001",
+            key_part_cycle_days=Decimal("15"),
+        )
+    )
     await db_session.commit()
 
     resp = await app_client.get("/api/schedules/99")
@@ -224,28 +271,38 @@ async def test_schedule_detail(app_client, db_session):
 
 @pytest.mark.asyncio
 async def test_schedule_detail_normalizes_legacy_issue_text(app_client, db_session):
-    db_session.add(MachineScheduleResult(
-        order_line_id=199, contract_no="HT199", product_model="MC1-80",
-        schedule_status="scheduled",
-        machine_cycle_days=Decimal("60"), machine_assembly_days=Decimal("3"),
-    ))
-    db_session.add(DataIssueRecord(
-        issue_type="零件周期基准缺失",
-        issue_level="medium",
-        source_system="scheduler",
-        biz_key="199",
-        order_line_id=199,
-        issue_title="零件周期基准缺失，已按默认值排产",
-        issue_detail="订单行 199 缺少零件周期基准?涉及物料?P001?P002?已按默认值排产?",
-        status="open",
-    ))
+    db_session.add(
+        MachineScheduleResult(
+            order_line_id=199,
+            contract_no="HT199",
+            product_model="MC1-80",
+            schedule_status="scheduled",
+            machine_cycle_days=Decimal("60"),
+            machine_assembly_days=Decimal("3"),
+        )
+    )
+    db_session.add(
+        DataIssueRecord(
+            issue_type="零件周期基准缺失",
+            issue_level="medium",
+            source_system="scheduler",
+            biz_key="199",
+            order_line_id=199,
+            issue_title="零件周期基准缺失，已按默认值排产",
+            issue_detail="订单行 199 缺少零件周期基准?涉及物料?P001?P002?已按默认值排产?",
+            status="open",
+        )
+    )
     await db_session.commit()
 
     resp = await app_client.get("/api/schedules/199")
     body = resp.json()
 
     assert body["code"] == 0
-    assert body["data"]["issues"][0]["issue_detail"] == "订单行 199 缺少零件周期基准；涉及物料：P001、P002；已按默认值排产。"
+    assert (
+        body["data"]["issues"][0]["issue_detail"]
+        == "订单行 199 缺少零件周期基准；涉及物料：P001、P002；已按默认值排产。"
+    )
 
 
 @pytest.mark.asyncio
@@ -306,17 +363,29 @@ async def test_list_schedules_includes_dynamic_unscheduled_statuses(app_client, 
     db_session.add_all([pending_delivery, pending_drawing, missing_bom, schedulable])
     await db_session.flush()
 
-    db_session.add(MachineCycleBaseline(
-        machine_model="MCY-3", product_series="MCY",
-        order_qty=Decimal("1"), cycle_days_median=Decimal("20"),
-        sample_count=3, is_active=True,
-    ))
-    db_session.add(BomRelationSrc(
-        machine_material_no="MAT-SCH", plant="1000",
-        material_no="MAT-SCH", bom_component_no="ASM-SCH",
-        bom_component_desc="机身MCY-3", bom_level=1,
-        is_top_level=True, is_self_made=True, part_type="自产件",
-    ))
+    db_session.add(
+        MachineCycleBaseline(
+            machine_model="MCY-3",
+            product_series="MCY",
+            order_qty=Decimal("1"),
+            cycle_days_median=Decimal("20"),
+            sample_count=3,
+            is_active=True,
+        )
+    )
+    db_session.add(
+        BomRelationSrc(
+            machine_material_no="MAT-SCH",
+            plant="1000",
+            material_no="MAT-SCH",
+            bom_component_no="ASM-SCH",
+            bom_component_desc="机身MCY-3",
+            bom_level=1,
+            is_top_level=True,
+            is_self_made=True,
+            part_type="自产件",
+        )
+    )
     await db_session.commit()
 
     resp = await app_client.get("/api/schedules")
@@ -345,17 +414,29 @@ async def test_list_schedules_filter_by_dynamic_schedulable_status(app_client, d
     )
     db_session.add(schedulable)
     await db_session.flush()
-    db_session.add(MachineCycleBaseline(
-        machine_model="MCZ-1", product_series="MCZ",
-        order_qty=Decimal("1"), cycle_days_median=Decimal("20"),
-        sample_count=3, is_active=True,
-    ))
-    db_session.add(BomRelationSrc(
-        machine_material_no="MAT-DYN", plant="1000",
-        material_no="MAT-DYN", bom_component_no="ASM-DYN",
-        bom_component_desc="机身MCZ-1", bom_level=1,
-        is_top_level=True, is_self_made=True, part_type="自产件",
-    ))
+    db_session.add(
+        MachineCycleBaseline(
+            machine_model="MCZ-1",
+            product_series="MCZ",
+            order_qty=Decimal("1"),
+            cycle_days_median=Decimal("20"),
+            sample_count=3,
+            is_active=True,
+        )
+    )
+    db_session.add(
+        BomRelationSrc(
+            machine_material_no="MAT-DYN",
+            plant="1000",
+            material_no="MAT-DYN",
+            bom_component_no="ASM-DYN",
+            bom_component_desc="机身MCZ-1",
+            bom_level=1,
+            is_top_level=True,
+            is_self_made=True,
+            part_type="自产件",
+        )
+    )
     await db_session.commit()
 
     resp = await app_client.get("/api/schedules?schedule_status=schedulable")
@@ -368,29 +449,43 @@ async def test_list_schedules_filter_by_dynamic_schedulable_status(app_client, d
 
 @pytest.mark.asyncio
 async def test_list_schedules_persists_seeded_snapshots(app_client, db_session):
-    db_session.add(SalesPlanOrderLineSrc(
-        contract_no="HT-SEED",
-        customer_name="Seed Persist",
-        product_series="MCS",
-        product_model="MCS-1",
-        material_no="MAT-SEED",
-        quantity=Decimal("1"),
-        order_no="SO-SEED",
-        confirmed_delivery_date=datetime(2025, 1, 15),
-        drawing_released=True,
-        drawing_release_date=datetime(2024, 12, 1),
-    ))
-    db_session.add(MachineCycleBaseline(
-        machine_model="MCS-1", product_series="MCS",
-        order_qty=Decimal("1"), cycle_days_median=Decimal("20"),
-        sample_count=3, is_active=True,
-    ))
-    db_session.add(BomRelationSrc(
-        machine_material_no="MAT-SEED", plant="1000",
-        material_no="MAT-SEED", bom_component_no="ASM-SEED",
-        bom_component_desc="机身MCS-1", bom_level=1,
-        is_top_level=True, is_self_made=True, part_type="自产件",
-    ))
+    db_session.add(
+        SalesPlanOrderLineSrc(
+            contract_no="HT-SEED",
+            customer_name="Seed Persist",
+            product_series="MCS",
+            product_model="MCS-1",
+            material_no="MAT-SEED",
+            quantity=Decimal("1"),
+            order_no="SO-SEED",
+            confirmed_delivery_date=datetime(2025, 1, 15),
+            drawing_released=True,
+            drawing_release_date=datetime(2024, 12, 1),
+        )
+    )
+    db_session.add(
+        MachineCycleBaseline(
+            machine_model="MCS-1",
+            product_series="MCS",
+            order_qty=Decimal("1"),
+            cycle_days_median=Decimal("20"),
+            sample_count=3,
+            is_active=True,
+        )
+    )
+    db_session.add(
+        BomRelationSrc(
+            machine_material_no="MAT-SEED",
+            plant="1000",
+            material_no="MAT-SEED",
+            bom_component_no="ASM-SEED",
+            bom_component_desc="机身MCS-1",
+            bom_level=1,
+            is_top_level=True,
+            is_self_made=True,
+            part_type="自产件",
+        )
+    )
     await db_session.commit()
 
     resp = await app_client.get("/api/schedules?page_no=1&page_size=10")
@@ -403,29 +498,43 @@ async def test_list_schedules_persists_seeded_snapshots(app_client, db_session):
 
 @pytest.mark.asyncio
 async def test_second_schedule_query_reuses_existing_snapshot_seed(app_client, db_session, monkeypatch):
-    db_session.add(SalesPlanOrderLineSrc(
-        contract_no="HT-REUSE",
-        customer_name="Seed Reuse",
-        product_series="MCR",
-        product_model="MCR-1",
-        material_no="MAT-REUSE",
-        quantity=Decimal("1"),
-        order_no="SO-REUSE",
-        confirmed_delivery_date=datetime(2025, 1, 15),
-        drawing_released=True,
-        drawing_release_date=datetime(2024, 12, 1),
-    ))
-    db_session.add(MachineCycleBaseline(
-        machine_model="MCR-1", product_series="MCR",
-        order_qty=Decimal("1"), cycle_days_median=Decimal("20"),
-        sample_count=3, is_active=True,
-    ))
-    db_session.add(BomRelationSrc(
-        machine_material_no="MAT-REUSE", plant="1000",
-        material_no="MAT-REUSE", bom_component_no="ASM-REUSE",
-        bom_component_desc="机身MCR-1", bom_level=1,
-        is_top_level=True, is_self_made=True, part_type="自产件",
-    ))
+    db_session.add(
+        SalesPlanOrderLineSrc(
+            contract_no="HT-REUSE",
+            customer_name="Seed Reuse",
+            product_series="MCR",
+            product_model="MCR-1",
+            material_no="MAT-REUSE",
+            quantity=Decimal("1"),
+            order_no="SO-REUSE",
+            confirmed_delivery_date=datetime(2025, 1, 15),
+            drawing_released=True,
+            drawing_release_date=datetime(2024, 12, 1),
+        )
+    )
+    db_session.add(
+        MachineCycleBaseline(
+            machine_model="MCR-1",
+            product_series="MCR",
+            order_qty=Decimal("1"),
+            cycle_days_median=Decimal("20"),
+            sample_count=3,
+            is_active=True,
+        )
+    )
+    db_session.add(
+        BomRelationSrc(
+            machine_material_no="MAT-REUSE",
+            plant="1000",
+            material_no="MAT-REUSE",
+            bom_component_no="ASM-REUSE",
+            bom_component_desc="机身MCR-1",
+            bom_level=1,
+            is_top_level=True,
+            is_self_made=True,
+            part_type="自产件",
+        )
+    )
     await db_session.commit()
 
     first_resp = await app_client.get("/api/schedules?page_no=1&page_size=10")
@@ -467,81 +576,85 @@ async def test_schedule_detail_returns_dynamic_status_for_unscheduled_order(app_
 
 @pytest.mark.asyncio
 async def test_dashboard_overview_returns_real_aggregates(app_client, db_session):
-    db_session.add_all([
-        OrderScheduleSnapshot(
-            order_line_id=300,
-            contract_no="HT300",
-            customer_name="A客户",
-            product_model="MC1-80",
-            order_no="SO300",
-            confirmed_delivery_date=datetime(2026, 5, 10),
-            schedule_status="scheduled",
-            warning_level="normal",
-            planned_end_date=datetime(2026, 5, 20),
-            machine_cycle_days=Decimal("60"),
-            machine_assembly_days=Decimal("3"),
-            drawing_released=True,
-        ),
-        OrderScheduleSnapshot(
-            order_line_id=301,
-            contract_no="HT301",
-            customer_name="B客户",
-            product_model="MC2-100",
-            order_no="SO301",
-            confirmed_delivery_date=datetime(2026, 4, 15),
-            schedule_status="pending_trigger",
-            warning_level="abnormal",
-            planned_end_date=datetime(2026, 6, 5),
-            machine_cycle_days=Decimal("90"),
-            machine_assembly_days=Decimal("3"),
-            drawing_released=False,
-        ),
-        MachineScheduleResult(
-            order_line_id=300,
-            contract_no="HT300",
-            customer_name="A客户",
-            product_model="MC1-80",
-            order_no="SO300",
-            confirmed_delivery_date=datetime(2026, 5, 10),
-            schedule_status="scheduled",
-            warning_level="normal",
-            planned_end_date=datetime(2026, 5, 20),
-            machine_cycle_days=Decimal("60"),
-            machine_assembly_days=Decimal("3"),
-        ),
-    ])
-    db_session.add_all([
-        PartScheduleResult(
-            order_line_id=300,
-            assembly_name="机身",
-            production_sequence=1,
-            part_material_no="P300",
-            part_name="机身件",
-            is_key_part=True,
-            part_cycle_days=Decimal("10"),
-            warning_level="normal",
-        ),
-        PartScheduleResult(
-            order_line_id=301,
-            assembly_name="机身",
-            production_sequence=1,
-            part_material_no="P301",
-            part_name="机身件2",
-            is_key_part=True,
-            part_cycle_days=Decimal("12"),
-            warning_level="abnormal",
-        ),
-        PartScheduleResult(
-            order_line_id=301,
-            assembly_name="电控",
-            production_sequence=2,
-            part_material_no="P302",
-            part_name="电控件",
-            is_key_part=False,
-            part_cycle_days=Decimal("8"),
-            warning_level="normal",
-        ),
-    ])
+    db_session.add_all(
+        [
+            OrderScheduleSnapshot(
+                order_line_id=300,
+                contract_no="HT300",
+                customer_name="A客户",
+                product_model="MC1-80",
+                order_no="SO300",
+                confirmed_delivery_date=datetime(2026, 5, 10),
+                schedule_status="scheduled",
+                warning_level="normal",
+                planned_end_date=datetime(2026, 5, 20),
+                machine_cycle_days=Decimal("60"),
+                machine_assembly_days=Decimal("3"),
+                drawing_released=True,
+            ),
+            OrderScheduleSnapshot(
+                order_line_id=301,
+                contract_no="HT301",
+                customer_name="B客户",
+                product_model="MC2-100",
+                order_no="SO301",
+                confirmed_delivery_date=datetime(2026, 4, 15),
+                schedule_status="pending_trigger",
+                warning_level="abnormal",
+                planned_end_date=datetime(2026, 6, 5),
+                machine_cycle_days=Decimal("90"),
+                machine_assembly_days=Decimal("3"),
+                drawing_released=False,
+            ),
+            MachineScheduleResult(
+                order_line_id=300,
+                contract_no="HT300",
+                customer_name="A客户",
+                product_model="MC1-80",
+                order_no="SO300",
+                confirmed_delivery_date=datetime(2026, 5, 10),
+                schedule_status="scheduled",
+                warning_level="normal",
+                planned_end_date=datetime(2026, 5, 20),
+                machine_cycle_days=Decimal("60"),
+                machine_assembly_days=Decimal("3"),
+            ),
+        ]
+    )
+    db_session.add_all(
+        [
+            PartScheduleResult(
+                order_line_id=300,
+                assembly_name="机身",
+                production_sequence=1,
+                part_material_no="P300",
+                part_name="机身件",
+                is_key_part=True,
+                part_cycle_days=Decimal("10"),
+                warning_level="normal",
+            ),
+            PartScheduleResult(
+                order_line_id=301,
+                assembly_name="机身",
+                production_sequence=1,
+                part_material_no="P301",
+                part_name="机身件2",
+                is_key_part=True,
+                part_cycle_days=Decimal("12"),
+                warning_level="abnormal",
+            ),
+            PartScheduleResult(
+                order_line_id=301,
+                assembly_name="电控",
+                production_sequence=2,
+                part_material_no="P302",
+                part_name="电控件",
+                is_key_part=False,
+                part_cycle_days=Decimal("8"),
+                warning_level="normal",
+            ),
+        ]
+    )
     await db_session.commit()
 
     resp = await app_client.get("/api/dashboard/overview")
@@ -573,7 +686,6 @@ async def test_dashboard_overview_returns_real_aggregates(app_client, db_session
     }
     assert body["data"]["part_summary"]["top_assemblies"][0] == {"assembly_name": "机身", "count": 2}
 
-
     assert set(body["data"]["delivery_trends"].keys()) == {"day", "week", "month"}
     assert len(body["data"]["delivery_trends"]["day"]) == 30
     assert len(body["data"]["delivery_trends"]["week"]) == 12
@@ -581,6 +693,7 @@ async def test_dashboard_overview_returns_real_aggregates(app_client, db_session
     assert body["data"]["business_group_summary"][0]["business_group"]
     assert body["data"]["business_group_summary"][0]["order_count"] == 2
     assert body["data"]["abnormal_machine_orders"][0]["contract_no"] == "HT301"
+
 
 @pytest.mark.asyncio
 async def test_dashboard_overview_uses_repo_aggregates(db_session, monkeypatch):
@@ -728,30 +841,60 @@ async def test_schedule_calendar_day_detail_uses_repo_aggregate(db_session, monk
 
 @pytest.mark.asyncio
 async def test_list_part_schedules_filter_by_frontend_params(app_client, db_session):
-    db_session.add(MachineScheduleResult(
-        order_line_id=200, contract_no="HT200", order_no="SO200", product_model="MC1-80",
-        schedule_status="scheduled",
-        machine_cycle_days=Decimal("60"), machine_assembly_days=Decimal("3"),
-    ))
-    db_session.add(MachineScheduleResult(
-        order_line_id=201, contract_no="HT201", order_no="SO201", product_model="MC2-100",
-        schedule_status="scheduled",
-        machine_cycle_days=Decimal("90"), machine_assembly_days=Decimal("3"),
-    ))
-    db_session.add(PartScheduleResult(
-        order_line_id=200, assembly_name="机身", production_sequence=1,
-        part_material_no="P200", part_name="机身焊接件", is_key_part=True,
-        part_cycle_days=Decimal("15"), part_cycle_is_default=False, part_cycle_match_rule="exact_material",
-        key_part_material_no="P200", key_part_cycle_days=Decimal("15"),
-        planned_end_date=datetime(2025, 3, 20, 0, 0, 0),
-    ))
-    db_session.add(PartScheduleResult(
-        order_line_id=201, assembly_name="电控箱", production_sequence=1,
-        part_material_no="P201", part_name="电控箱总成", is_key_part=True,
-        part_cycle_days=Decimal("12"), part_cycle_is_default=False, part_cycle_match_rule="exact_material",
-        key_part_material_no="P201", key_part_cycle_days=Decimal("12"),
-        planned_end_date=datetime(2025, 4, 5, 0, 0, 0),
-    ))
+    db_session.add(
+        MachineScheduleResult(
+            order_line_id=200,
+            contract_no="HT200",
+            order_no="SO200",
+            product_model="MC1-80",
+            schedule_status="scheduled",
+            machine_cycle_days=Decimal("60"),
+            machine_assembly_days=Decimal("3"),
+        )
+    )
+    db_session.add(
+        MachineScheduleResult(
+            order_line_id=201,
+            contract_no="HT201",
+            order_no="SO201",
+            product_model="MC2-100",
+            schedule_status="scheduled",
+            machine_cycle_days=Decimal("90"),
+            machine_assembly_days=Decimal("3"),
+        )
+    )
+    db_session.add(
+        PartScheduleResult(
+            order_line_id=200,
+            assembly_name="机身",
+            production_sequence=1,
+            part_material_no="P200",
+            part_name="机身焊接件",
+            is_key_part=True,
+            part_cycle_days=Decimal("15"),
+            part_cycle_is_default=False,
+            part_cycle_match_rule="exact_material",
+            key_part_material_no="P200",
+            key_part_cycle_days=Decimal("15"),
+            planned_end_date=datetime(2025, 3, 20, 0, 0, 0),
+        )
+    )
+    db_session.add(
+        PartScheduleResult(
+            order_line_id=201,
+            assembly_name="电控箱",
+            production_sequence=1,
+            part_material_no="P201",
+            part_name="电控箱总成",
+            is_key_part=True,
+            part_cycle_days=Decimal("12"),
+            part_cycle_is_default=False,
+            part_cycle_match_rule="exact_material",
+            key_part_material_no="P201",
+            key_part_cycle_days=Decimal("12"),
+            planned_end_date=datetime(2025, 4, 5, 0, 0, 0),
+        )
+    )
     await db_session.commit()
 
     resp = await app_client.get("/api/part-schedules?contract_no=HT200")
@@ -784,27 +927,58 @@ async def test_list_part_schedules_filter_by_frontend_params(app_client, db_sess
 
 @pytest.mark.asyncio
 async def test_get_part_schedule_assembly_name_options(app_client, db_session):
-    db_session.add(PartScheduleResult(
-        order_line_id=300, assembly_name="机身", production_sequence=1,
-        part_material_no="P300", part_name="机身焊接件", is_key_part=True,
-        part_cycle_days=Decimal("10"), part_cycle_is_default=False, part_cycle_match_rule="exact_material",
-        key_part_material_no="P300", key_part_cycle_days=Decimal("10"),
-    ))
-    db_session.add(PartScheduleResult(
-        order_line_id=301, assembly_name="电控箱", production_sequence=1,
-        part_material_no="P301", part_name="电控箱总成", is_key_part=True,
-        part_cycle_days=Decimal("8"), part_cycle_is_default=False, part_cycle_match_rule="exact_material",
-        key_part_material_no="P301", key_part_cycle_days=Decimal("8"),
-    ))
-    db_session.add(PartScheduleResult(
-        order_line_id=302, assembly_name="机身", production_sequence=2,
-        part_material_no="P302", part_name="机身支架", is_key_part=False,
-        part_cycle_days=Decimal("6"), part_cycle_is_default=False, part_cycle_match_rule="exact_material",
-        key_part_material_no="P300", key_part_cycle_days=Decimal("10"),
-    ))
-    db_session.add(PartScheduleResult(
-        order_line_id=303, assembly_name="总装", production_sequence=1,
-    ))
+    db_session.add(
+        PartScheduleResult(
+            order_line_id=300,
+            assembly_name="机身",
+            production_sequence=1,
+            part_material_no="P300",
+            part_name="机身焊接件",
+            is_key_part=True,
+            part_cycle_days=Decimal("10"),
+            part_cycle_is_default=False,
+            part_cycle_match_rule="exact_material",
+            key_part_material_no="P300",
+            key_part_cycle_days=Decimal("10"),
+        )
+    )
+    db_session.add(
+        PartScheduleResult(
+            order_line_id=301,
+            assembly_name="电控箱",
+            production_sequence=1,
+            part_material_no="P301",
+            part_name="电控箱总成",
+            is_key_part=True,
+            part_cycle_days=Decimal("8"),
+            part_cycle_is_default=False,
+            part_cycle_match_rule="exact_material",
+            key_part_material_no="P301",
+            key_part_cycle_days=Decimal("8"),
+        )
+    )
+    db_session.add(
+        PartScheduleResult(
+            order_line_id=302,
+            assembly_name="机身",
+            production_sequence=2,
+            part_material_no="P302",
+            part_name="机身支架",
+            is_key_part=False,
+            part_cycle_days=Decimal("6"),
+            part_cycle_is_default=False,
+            part_cycle_match_rule="exact_material",
+            key_part_material_no="P300",
+            key_part_cycle_days=Decimal("10"),
+        )
+    )
+    db_session.add(
+        PartScheduleResult(
+            order_line_id=303,
+            assembly_name="总装",
+            production_sequence=1,
+        )
+    )
     await db_session.commit()
 
     resp = await app_client.get("/api/part-schedules/options/assembly-names")
@@ -814,26 +988,43 @@ async def test_get_part_schedule_assembly_name_options(app_client, db_session):
     assert set(body["data"]) == {"机身", "电控箱"}
 
 
-
-
 @pytest.mark.asyncio
 async def test_list_part_schedules_hides_placeholder_rows(app_client, db_session):
-    db_session.add(MachineScheduleResult(
-        order_line_id=260, contract_no="HT260", order_no="SO260", product_model="MC1-80",
-        schedule_status="scheduled",
-        machine_cycle_days=Decimal("60"), machine_assembly_days=Decimal("3"),
-    ))
-    db_session.add(PartScheduleResult(
-        order_line_id=260, assembly_name="总装", production_sequence=1,
-        planned_end_date=datetime(2025, 3, 20, 0, 0, 0),
-    ))
-    db_session.add(PartScheduleResult(
-        order_line_id=260, assembly_name="机身", production_sequence=2,
-        part_material_no="P260", part_name="机身焊接件", is_key_part=True,
-        part_cycle_days=Decimal("15"), part_cycle_is_default=False, part_cycle_match_rule="exact_material",
-        key_part_material_no="P260", key_part_cycle_days=Decimal("15"),
-        planned_end_date=datetime(2025, 3, 22, 0, 0, 0),
-    ))
+    db_session.add(
+        MachineScheduleResult(
+            order_line_id=260,
+            contract_no="HT260",
+            order_no="SO260",
+            product_model="MC1-80",
+            schedule_status="scheduled",
+            machine_cycle_days=Decimal("60"),
+            machine_assembly_days=Decimal("3"),
+        )
+    )
+    db_session.add(
+        PartScheduleResult(
+            order_line_id=260,
+            assembly_name="总装",
+            production_sequence=1,
+            planned_end_date=datetime(2025, 3, 20, 0, 0, 0),
+        )
+    )
+    db_session.add(
+        PartScheduleResult(
+            order_line_id=260,
+            assembly_name="机身",
+            production_sequence=2,
+            part_material_no="P260",
+            part_name="机身焊接件",
+            is_key_part=True,
+            part_cycle_days=Decimal("15"),
+            part_cycle_is_default=False,
+            part_cycle_match_rule="exact_material",
+            key_part_material_no="P260",
+            key_part_cycle_days=Decimal("15"),
+            planned_end_date=datetime(2025, 3, 22, 0, 0, 0),
+        )
+    )
     await db_session.commit()
 
     resp = await app_client.get("/api/part-schedules?contract_no=HT260")
@@ -844,36 +1035,39 @@ async def test_list_part_schedules_hides_placeholder_rows(app_client, db_session
     assert body["data"]["items"][0]["assembly_name"] == "机身"
     assert body["data"]["items"][0]["part_name"] == "机身焊接件"
 
+
 @pytest.mark.asyncio
 async def test_list_schedules_filter_by_frontend_params(app_client, db_session):
-    db_session.add_all([
-        MachineScheduleResult(
-            order_line_id=400,
-            contract_no="HT-400-A",
-            customer_name="Alpha Robotics",
-            product_series="MC2",
-            product_model="MC2-200",
-            order_no="SO-400-A",
-            schedule_status="scheduled",
-            warning_level="abnormal",
-            confirmed_delivery_date=datetime(2025, 5, 10, 0, 0, 0),
-            machine_cycle_days=Decimal("60"),
-            machine_assembly_days=Decimal("3"),
-        ),
-        MachineScheduleResult(
-            order_line_id=401,
-            contract_no="HT-401-B",
-            customer_name="Beta Factory",
-            product_series="MC1",
-            product_model="MC1-80",
-            order_no="SO-401-B",
-            schedule_status="pending_trigger",
-            warning_level="normal",
-            confirmed_delivery_date=datetime(2025, 6, 15, 0, 0, 0),
-            machine_cycle_days=Decimal("45"),
-            machine_assembly_days=Decimal("2"),
-        ),
-    ])
+    db_session.add_all(
+        [
+            MachineScheduleResult(
+                order_line_id=400,
+                contract_no="HT-400-A",
+                customer_name="Alpha Robotics",
+                product_series="MC2",
+                product_model="MC2-200",
+                order_no="SO-400-A",
+                schedule_status="scheduled",
+                warning_level="abnormal",
+                confirmed_delivery_date=datetime(2025, 5, 10, 0, 0, 0),
+                machine_cycle_days=Decimal("60"),
+                machine_assembly_days=Decimal("3"),
+            ),
+            MachineScheduleResult(
+                order_line_id=401,
+                contract_no="HT-401-B",
+                customer_name="Beta Factory",
+                product_series="MC1",
+                product_model="MC1-80",
+                order_no="SO-401-B",
+                schedule_status="pending_trigger",
+                warning_level="normal",
+                confirmed_delivery_date=datetime(2025, 6, 15, 0, 0, 0),
+                machine_cycle_days=Decimal("45"),
+                machine_assembly_days=Decimal("2"),
+            ),
+        ]
+    )
     await db_session.commit()
 
     resp = await app_client.get("/api/schedules?contract_no=400")
@@ -919,54 +1113,56 @@ async def test_list_schedules_filter_by_frontend_params(app_client, db_session):
 
 @pytest.mark.asyncio
 async def test_list_part_schedules_filter_by_warning_level(app_client, db_session):
-    db_session.add_all([
-        MachineScheduleResult(
-            order_line_id=500,
-            contract_no="HT500",
-            order_no="SO500",
-            product_model="MC5-500",
-            schedule_status="scheduled",
-            machine_cycle_days=Decimal("60"),
-            machine_assembly_days=Decimal("3"),
-        ),
-        MachineScheduleResult(
-            order_line_id=501,
-            contract_no="HT501",
-            order_no="SO501",
-            product_model="MC5-501",
-            schedule_status="scheduled",
-            machine_cycle_days=Decimal("60"),
-            machine_assembly_days=Decimal("3"),
-        ),
-        PartScheduleResult(
-            order_line_id=500,
-            assembly_name="Assembly-A",
-            production_sequence=1,
-            part_material_no="P500",
-            part_name="Part 500",
-            is_key_part=True,
-            part_cycle_days=Decimal("15"),
-            part_cycle_is_default=False,
-            part_cycle_match_rule="exact_material",
-            key_part_material_no="P500",
-            key_part_cycle_days=Decimal("15"),
-            warning_level="abnormal",
-        ),
-        PartScheduleResult(
-            order_line_id=501,
-            assembly_name="Assembly-B",
-            production_sequence=1,
-            part_material_no="P501",
-            part_name="Part 501",
-            is_key_part=True,
-            part_cycle_days=Decimal("12"),
-            part_cycle_is_default=False,
-            part_cycle_match_rule="exact_material",
-            key_part_material_no="P501",
-            key_part_cycle_days=Decimal("12"),
-            warning_level="normal",
-        ),
-    ])
+    db_session.add_all(
+        [
+            MachineScheduleResult(
+                order_line_id=500,
+                contract_no="HT500",
+                order_no="SO500",
+                product_model="MC5-500",
+                schedule_status="scheduled",
+                machine_cycle_days=Decimal("60"),
+                machine_assembly_days=Decimal("3"),
+            ),
+            MachineScheduleResult(
+                order_line_id=501,
+                contract_no="HT501",
+                order_no="SO501",
+                product_model="MC5-501",
+                schedule_status="scheduled",
+                machine_cycle_days=Decimal("60"),
+                machine_assembly_days=Decimal("3"),
+            ),
+            PartScheduleResult(
+                order_line_id=500,
+                assembly_name="Assembly-A",
+                production_sequence=1,
+                part_material_no="P500",
+                part_name="Part 500",
+                is_key_part=True,
+                part_cycle_days=Decimal("15"),
+                part_cycle_is_default=False,
+                part_cycle_match_rule="exact_material",
+                key_part_material_no="P500",
+                key_part_cycle_days=Decimal("15"),
+                warning_level="abnormal",
+            ),
+            PartScheduleResult(
+                order_line_id=501,
+                assembly_name="Assembly-B",
+                production_sequence=1,
+                part_material_no="P501",
+                part_name="Part 501",
+                is_key_part=True,
+                part_cycle_days=Decimal("12"),
+                part_cycle_is_default=False,
+                part_cycle_match_rule="exact_material",
+                key_part_material_no="P501",
+                key_part_cycle_days=Decimal("12"),
+                warning_level="normal",
+            ),
+        ]
+    )
     await db_session.commit()
 
     resp = await app_client.get("/api/part-schedules?warning_level=abnormal")
@@ -978,54 +1174,56 @@ async def test_list_part_schedules_filter_by_warning_level(app_client, db_sessio
 
 @pytest.mark.asyncio
 async def test_list_part_schedules_enriches_contract_and_order_numbers_in_batch(app_client, db_session):
-    db_session.add_all([
-        OrderScheduleSnapshot(
-            order_line_id=601,
-            contract_no="HT601",
-            order_no="SO601",
-            product_model="MC6-601",
-            schedule_status="scheduled",
-            warning_level="normal",
-            machine_cycle_days=Decimal("30"),
-            machine_assembly_days=Decimal("3"),
-        ),
-        OrderScheduleSnapshot(
-            order_line_id=602,
-            contract_no="HT602",
-            order_no="SO602",
-            product_model="MC6-602",
-            schedule_status="scheduled",
-            warning_level="abnormal",
-            machine_cycle_days=Decimal("35"),
-            machine_assembly_days=Decimal("3"),
-        ),
-        PartScheduleResult(
-            order_line_id=601,
-            assembly_name="Assembly-601",
-            production_sequence=1,
-            part_material_no="P601",
-            part_name="Part 601",
-            is_key_part=True,
-            part_cycle_days=Decimal("10"),
-            part_cycle_is_default=False,
-            part_cycle_match_rule="exact_material",
-            key_part_material_no="P601",
-            key_part_cycle_days=Decimal("10"),
-        ),
-        PartScheduleResult(
-            order_line_id=602,
-            assembly_name="Assembly-602",
-            production_sequence=1,
-            part_material_no="P602",
-            part_name="Part 602",
-            is_key_part=True,
-            part_cycle_days=Decimal("12"),
-            part_cycle_is_default=False,
-            part_cycle_match_rule="exact_material",
-            key_part_material_no="P602",
-            key_part_cycle_days=Decimal("12"),
-        ),
-    ])
+    db_session.add_all(
+        [
+            OrderScheduleSnapshot(
+                order_line_id=601,
+                contract_no="HT601",
+                order_no="SO601",
+                product_model="MC6-601",
+                schedule_status="scheduled",
+                warning_level="normal",
+                machine_cycle_days=Decimal("30"),
+                machine_assembly_days=Decimal("3"),
+            ),
+            OrderScheduleSnapshot(
+                order_line_id=602,
+                contract_no="HT602",
+                order_no="SO602",
+                product_model="MC6-602",
+                schedule_status="scheduled",
+                warning_level="abnormal",
+                machine_cycle_days=Decimal("35"),
+                machine_assembly_days=Decimal("3"),
+            ),
+            PartScheduleResult(
+                order_line_id=601,
+                assembly_name="Assembly-601",
+                production_sequence=1,
+                part_material_no="P601",
+                part_name="Part 601",
+                is_key_part=True,
+                part_cycle_days=Decimal("10"),
+                part_cycle_is_default=False,
+                part_cycle_match_rule="exact_material",
+                key_part_material_no="P601",
+                key_part_cycle_days=Decimal("10"),
+            ),
+            PartScheduleResult(
+                order_line_id=602,
+                assembly_name="Assembly-602",
+                production_sequence=1,
+                part_material_no="P602",
+                part_name="Part 602",
+                is_key_part=True,
+                part_cycle_days=Decimal("12"),
+                part_cycle_is_default=False,
+                part_cycle_match_rule="exact_material",
+                key_part_material_no="P602",
+                key_part_cycle_days=Decimal("12"),
+            ),
+        ]
+    )
     await db_session.commit()
 
     resp = await app_client.get("/api/part-schedules?page_no=1&page_size=20")
@@ -1041,40 +1239,42 @@ async def test_list_part_schedules_enriches_contract_and_order_numbers_in_batch(
 
 @pytest.mark.asyncio
 async def test_list_part_schedules_supports_snapshot_sort_without_machine_rows(app_client, db_session):
-    db_session.add_all([
-        OrderScheduleSnapshot(
-            order_line_id=701,
-            contract_no="HT701-A",
-            order_no="SO701",
-            product_model="MC7-701",
-            schedule_status="scheduled",
-            warning_level="normal",
-        ),
-        OrderScheduleSnapshot(
-            order_line_id=702,
-            contract_no="HT702-B",
-            order_no="SO702",
-            product_model="MC7-702",
-            schedule_status="scheduled",
-            warning_level="normal",
-        ),
-        PartScheduleResult(
-            order_line_id=701,
-            assembly_name="Assembly-701",
-            production_sequence=1,
-            part_material_no="P701",
-            part_name="Part 701",
-            is_key_part=True,
-        ),
-        PartScheduleResult(
-            order_line_id=702,
-            assembly_name="Assembly-702",
-            production_sequence=1,
-            part_material_no="P702",
-            part_name="Part 702",
-            is_key_part=True,
-        ),
-    ])
+    db_session.add_all(
+        [
+            OrderScheduleSnapshot(
+                order_line_id=701,
+                contract_no="HT701-A",
+                order_no="SO701",
+                product_model="MC7-701",
+                schedule_status="scheduled",
+                warning_level="normal",
+            ),
+            OrderScheduleSnapshot(
+                order_line_id=702,
+                contract_no="HT702-B",
+                order_no="SO702",
+                product_model="MC7-702",
+                schedule_status="scheduled",
+                warning_level="normal",
+            ),
+            PartScheduleResult(
+                order_line_id=701,
+                assembly_name="Assembly-701",
+                production_sequence=1,
+                part_material_no="P701",
+                part_name="Part 701",
+                is_key_part=True,
+            ),
+            PartScheduleResult(
+                order_line_id=702,
+                assembly_name="Assembly-702",
+                production_sequence=1,
+                part_material_no="P702",
+                part_name="Part 702",
+                is_key_part=True,
+            ),
+        ]
+    )
     await db_session.commit()
 
     resp = await app_client.get(
@@ -1089,32 +1289,38 @@ async def test_list_part_schedules_supports_snapshot_sort_without_machine_rows(a
 
 @pytest.mark.asyncio
 async def test_schedule_detail_hides_placeholder_part_rows(app_client, db_session):
-    db_session.add(MachineScheduleResult(
-        order_line_id=910,
-        contract_no="HT910",
-        product_model="MC1-80",
-        schedule_status="scheduled",
-        machine_cycle_days=Decimal("60"),
-        machine_assembly_days=Decimal("3"),
-    ))
-    db_session.add(PartScheduleResult(
-        order_line_id=910,
-        assembly_name="平衡缸",
-        production_sequence=1,
-        planned_end_date=datetime(2025, 3, 20, 0, 0, 0),
-    ))
-    db_session.add(PartScheduleResult(
-        order_line_id=910,
-        assembly_name="机身",
-        production_sequence=2,
-        part_material_no="P910",
-        part_name="机身焊接件",
-        is_key_part=True,
-        part_cycle_days=Decimal("15"),
-        key_part_material_no="P910",
-        key_part_cycle_days=Decimal("15"),
-        planned_end_date=datetime(2025, 3, 21, 0, 0, 0),
-    ))
+    db_session.add(
+        MachineScheduleResult(
+            order_line_id=910,
+            contract_no="HT910",
+            product_model="MC1-80",
+            schedule_status="scheduled",
+            machine_cycle_days=Decimal("60"),
+            machine_assembly_days=Decimal("3"),
+        )
+    )
+    db_session.add(
+        PartScheduleResult(
+            order_line_id=910,
+            assembly_name="平衡缸",
+            production_sequence=1,
+            planned_end_date=datetime(2025, 3, 20, 0, 0, 0),
+        )
+    )
+    db_session.add(
+        PartScheduleResult(
+            order_line_id=910,
+            assembly_name="机身",
+            production_sequence=2,
+            part_material_no="P910",
+            part_name="机身焊接件",
+            is_key_part=True,
+            part_cycle_days=Decimal("15"),
+            key_part_material_no="P910",
+            key_part_cycle_days=Decimal("15"),
+            planned_end_date=datetime(2025, 3, 21, 0, 0, 0),
+        )
+    )
     await db_session.commit()
 
     resp = await app_client.get("/api/schedules/910")
@@ -1125,40 +1331,45 @@ async def test_schedule_detail_hides_placeholder_part_rows(app_client, db_sessio
     assert body["data"]["part_schedules"][0]["assembly_name"] == "机身"
     assert body["data"]["part_schedules"][0]["part_name"] == "机身焊接件"
 
+
 @pytest.mark.asyncio
 async def test_dashboard_overview_excludes_placeholder_part_rows(app_client, db_session):
-    db_session.add(OrderScheduleSnapshot(
-        order_line_id=950,
-        contract_no="HT950",
-        customer_name="Customer 950",
-        product_model="MC1-80",
-        order_no="SO950",
-        confirmed_delivery_date=datetime(2026, 7, 1),
-        schedule_status="scheduled",
-        warning_level="normal",
-        planned_end_date=datetime(2026, 7, 15),
-        machine_cycle_days=Decimal("60"),
-        machine_assembly_days=Decimal("3"),
-        drawing_released=True,
-    ))
-    db_session.add_all([
-        PartScheduleResult(
+    db_session.add(
+        OrderScheduleSnapshot(
             order_line_id=950,
-            assembly_name="Hidden-Assembly",
-            production_sequence=1,
-            warning_level="abnormal",
-        ),
-        PartScheduleResult(
-            order_line_id=950,
-            assembly_name="Visible-Assembly",
-            production_sequence=2,
-            part_material_no="P950",
-            part_name="Visible Part",
-            is_key_part=True,
-            part_cycle_days=Decimal("10"),
+            contract_no="HT950",
+            customer_name="Customer 950",
+            product_model="MC1-80",
+            order_no="SO950",
+            confirmed_delivery_date=datetime(2026, 7, 1),
+            schedule_status="scheduled",
             warning_level="normal",
-        ),
-    ])
+            planned_end_date=datetime(2026, 7, 15),
+            machine_cycle_days=Decimal("60"),
+            machine_assembly_days=Decimal("3"),
+            drawing_released=True,
+        )
+    )
+    db_session.add_all(
+        [
+            PartScheduleResult(
+                order_line_id=950,
+                assembly_name="Hidden-Assembly",
+                production_sequence=1,
+                warning_level="abnormal",
+            ),
+            PartScheduleResult(
+                order_line_id=950,
+                assembly_name="Visible-Assembly",
+                production_sequence=2,
+                part_material_no="P950",
+                part_name="Visible Part",
+                is_key_part=True,
+                part_cycle_days=Decimal("10"),
+                warning_level="normal",
+            ),
+        ]
+    )
     await db_session.commit()
 
     resp = await app_client.get("/api/dashboard/overview")
@@ -1170,57 +1381,56 @@ async def test_dashboard_overview_excludes_placeholder_part_rows(app_client, db_
     assert {item["key"]: item["count"] for item in body["data"]["part_summary"]["warning_counts"]} == {
         "normal": 1,
     }
-    assert body["data"]["part_summary"]["top_assemblies"] == [
-        {"assembly_name": "Visible-Assembly", "count": 1}
-    ]
-
+    assert body["data"]["part_summary"]["top_assemblies"] == [{"assembly_name": "Visible-Assembly", "count": 1}]
 
 
 @pytest.mark.asyncio
 async def test_list_schedules_supports_schedule_bucket_filters(app_client, db_session):
-    db_session.add_all([
-        MachineScheduleResult(
-            order_line_id=880,
-            contract_no="HT880",
-            product_model="MC1-80",
-            order_no="SO880",
-            schedule_status="scheduled",
-            warning_level="normal",
-            confirmed_delivery_date=datetime(2026, 5, 10, 0, 0, 0),
-            machine_cycle_days=Decimal("30"),
-            machine_assembly_days=Decimal("2"),
-        ),
-        MachineScheduleResult(
-            order_line_id=881,
-            contract_no="HT881",
-            product_model="MC1-80",
-            order_no="SO881",
-            schedule_status="pending_trigger",
-            warning_level="normal",
-            confirmed_delivery_date=datetime(2026, 5, 11, 0, 0, 0),
-            machine_cycle_days=Decimal("35"),
-            machine_assembly_days=Decimal("2"),
-        ),
-        MachineScheduleResult(
-            order_line_id=882,
-            contract_no="HT882",
-            product_model="MC1-80",
-            order_no="SO882",
-            schedule_status="scheduled",
-            warning_level="abnormal",
-            confirmed_delivery_date=datetime(2026, 5, 12, 0, 0, 0),
-            machine_cycle_days=Decimal("40"),
-            machine_assembly_days=Decimal("3"),
-        ),
-    ])
+    db_session.add_all(
+        [
+            MachineScheduleResult(
+                order_line_id=880,
+                contract_no="HT880",
+                product_model="MC1-80",
+                order_no="SO880",
+                schedule_status="scheduled",
+                warning_level="normal",
+                confirmed_delivery_date=datetime(2026, 5, 10, 0, 0, 0),
+                machine_cycle_days=Decimal("30"),
+                machine_assembly_days=Decimal("2"),
+            ),
+            MachineScheduleResult(
+                order_line_id=881,
+                contract_no="HT881",
+                product_model="MC1-80",
+                order_no="SO881",
+                schedule_status="pending_trigger",
+                warning_level="normal",
+                confirmed_delivery_date=datetime(2026, 5, 11, 0, 0, 0),
+                machine_cycle_days=Decimal("35"),
+                machine_assembly_days=Decimal("2"),
+            ),
+            MachineScheduleResult(
+                order_line_id=882,
+                contract_no="HT882",
+                product_model="MC1-80",
+                order_no="SO882",
+                schedule_status="scheduled",
+                warning_level="abnormal",
+                confirmed_delivery_date=datetime(2026, 5, 12, 0, 0, 0),
+                machine_cycle_days=Decimal("40"),
+                machine_assembly_days=Decimal("3"),
+            ),
+        ]
+    )
     await db_session.commit()
 
-    resp = await app_client.get('/api/schedules?schedule_bucket=unscheduled')
+    resp = await app_client.get("/api/schedules?schedule_bucket=unscheduled")
     body = resp.json()
-    assert body['code'] == 0
-    assert {item['order_line_id'] for item in body['data']['items']} == {881}
+    assert body["code"] == 0
+    assert {item["order_line_id"] for item in body["data"]["items"]} == {881}
 
-    resp = await app_client.get('/api/schedules?schedule_bucket=risk')
+    resp = await app_client.get("/api/schedules?schedule_bucket=risk")
     body = resp.json()
-    assert body['code'] == 0
-    assert {item['order_line_id'] for item in body['data']['items']} == {881, 882}
+    assert body["code"] == 0
+    assert {item["order_line_id"] for item in body["data"]["items"]} == {881, 882}

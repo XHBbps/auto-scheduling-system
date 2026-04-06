@@ -56,8 +56,10 @@ async def test_auto_bom_backfill_enqueues_missing_materials(db_session):
     )
 
     queue_items = (
-        await db_session.execute(select(BomBackfillQueue).where(BomBackfillQueue.material_no == "MAT-BOM-001"))
-    ).scalars().all()
+        (await db_session.execute(select(BomBackfillQueue).where(BomBackfillQueue.material_no == "MAT-BOM-001")))
+        .scalars()
+        .all()
+    )
 
     assert result.candidate_orders == 1
     assert result.candidate_items == 1
@@ -165,35 +167,37 @@ async def test_auto_bom_backfill_enqueues_multiple_candidates_without_per_item_l
 
 @pytest.mark.asyncio
 async def test_auto_bom_backfill_dedupes_same_material_plant_candidates_in_sql(db_session):
-    db_session.add_all([
-        SalesPlanOrderLineSrc(
-            sap_code="SAP-BOM-DEDUPE-001",
-            sap_line_no="10",
-            order_no="SO-DEDUPE-001",
-            material_no="MAT-DEDUPE-001",
-            delivery_plant="1100",
-            drawing_released=True,
-            confirmed_delivery_date=datetime(2026, 4, 6),
-        ),
-        SalesPlanOrderLineSrc(
-            sap_code="SAP-BOM-DEDUPE-002",
-            sap_line_no="20",
-            order_no="SO-DEDUPE-002",
-            material_no="MAT-DEDUPE-001",
-            delivery_plant="1100",
-            drawing_released=True,
-            confirmed_delivery_date=datetime(2026, 4, 7),
-        ),
-        SalesPlanOrderLineSrc(
-            sap_code="SAP-BOM-DEDUPE-003",
-            sap_line_no="30",
-            order_no="SO-DEDUPE-003",
-            material_no="MAT-DEDUPE-001",
-            delivery_plant="1100",
-            drawing_released=True,
-            confirmed_delivery_date=datetime(2026, 4, 8),
-        ),
-    ])
+    db_session.add_all(
+        [
+            SalesPlanOrderLineSrc(
+                sap_code="SAP-BOM-DEDUPE-001",
+                sap_line_no="10",
+                order_no="SO-DEDUPE-001",
+                material_no="MAT-DEDUPE-001",
+                delivery_plant="1100",
+                drawing_released=True,
+                confirmed_delivery_date=datetime(2026, 4, 6),
+            ),
+            SalesPlanOrderLineSrc(
+                sap_code="SAP-BOM-DEDUPE-002",
+                sap_line_no="20",
+                order_no="SO-DEDUPE-002",
+                material_no="MAT-DEDUPE-001",
+                delivery_plant="1100",
+                drawing_released=True,
+                confirmed_delivery_date=datetime(2026, 4, 7),
+            ),
+            SalesPlanOrderLineSrc(
+                sap_code="SAP-BOM-DEDUPE-003",
+                sap_line_no="30",
+                order_no="SO-DEDUPE-003",
+                material_no="MAT-DEDUPE-001",
+                delivery_plant="1100",
+                drawing_released=True,
+                confirmed_delivery_date=datetime(2026, 4, 8),
+            ),
+        ]
+    )
     await db_session.commit()
 
     service = AutoBomBackfillService(session_factory=_SessionFactory(db_session))
@@ -204,8 +208,10 @@ async def test_auto_bom_backfill_dedupes_same_material_plant_candidates_in_sql(d
     )
 
     queue_items = (
-        await db_session.execute(select(BomBackfillQueue).where(BomBackfillQueue.material_no == "MAT-DEDUPE-001"))
-    ).scalars().all()
+        (await db_session.execute(select(BomBackfillQueue).where(BomBackfillQueue.material_no == "MAT-DEDUPE-001")))
+        .scalars()
+        .all()
+    )
 
     assert result.candidate_orders == 3
     assert result.candidate_items == 1
@@ -216,26 +222,28 @@ async def test_auto_bom_backfill_dedupes_same_material_plant_candidates_in_sql(d
 
 @pytest.mark.asyncio
 async def test_auto_bom_backfill_loads_candidates_with_single_sales_plan_query(db_session):
-    db_session.add_all([
-        SalesPlanOrderLineSrc(
-            sap_code="SAP-BOM-QUERY-001",
-            sap_line_no="10",
-            order_no="SO-QUERY-001",
-            material_no="MAT-QUERY-001",
-            delivery_plant="1100",
-            drawing_released=True,
-            confirmed_delivery_date=datetime(2026, 4, 9),
-        ),
-        SalesPlanOrderLineSrc(
-            sap_code="SAP-BOM-QUERY-002",
-            sap_line_no="20",
-            order_no="SO-QUERY-002",
-            material_no="MAT-QUERY-001",
-            delivery_plant="1100",
-            drawing_released=True,
-            confirmed_delivery_date=datetime(2026, 4, 10),
-        ),
-    ])
+    db_session.add_all(
+        [
+            SalesPlanOrderLineSrc(
+                sap_code="SAP-BOM-QUERY-001",
+                sap_line_no="10",
+                order_no="SO-QUERY-001",
+                material_no="MAT-QUERY-001",
+                delivery_plant="1100",
+                drawing_released=True,
+                confirmed_delivery_date=datetime(2026, 4, 9),
+            ),
+            SalesPlanOrderLineSrc(
+                sap_code="SAP-BOM-QUERY-002",
+                sap_line_no="20",
+                order_no="SO-QUERY-002",
+                material_no="MAT-QUERY-001",
+                delivery_plant="1100",
+                drawing_released=True,
+                confirmed_delivery_date=datetime(2026, 4, 10),
+            ),
+        ]
+    )
     await db_session.commit()
 
     sales_plan_query_count = 0
@@ -268,26 +276,28 @@ async def test_auto_bom_backfill_loads_candidates_with_single_sales_plan_query(d
 
 @pytest.mark.asyncio
 async def test_auto_bom_backfill_distinguishes_existing_bom_by_plant(db_session):
-    db_session.add_all([
-        SalesPlanOrderLineSrc(
-            sap_code="SAP-BOM-PLANT-001",
-            sap_line_no="10",
-            order_no="SO-PLANT-001",
-            material_no="MAT-PLANT-001",
-            delivery_plant="1100",
-            drawing_released=True,
-            confirmed_delivery_date=datetime(2026, 4, 9),
-        ),
-        SalesPlanOrderLineSrc(
-            sap_code="SAP-BOM-PLANT-002",
-            sap_line_no="20",
-            order_no="SO-PLANT-002",
-            material_no="MAT-PLANT-001",
-            delivery_plant="1200",
-            drawing_released=True,
-            confirmed_delivery_date=datetime(2026, 4, 10),
-        ),
-    ])
+    db_session.add_all(
+        [
+            SalesPlanOrderLineSrc(
+                sap_code="SAP-BOM-PLANT-001",
+                sap_line_no="10",
+                order_no="SO-PLANT-001",
+                material_no="MAT-PLANT-001",
+                delivery_plant="1100",
+                drawing_released=True,
+                confirmed_delivery_date=datetime(2026, 4, 9),
+            ),
+            SalesPlanOrderLineSrc(
+                sap_code="SAP-BOM-PLANT-002",
+                sap_line_no="20",
+                order_no="SO-PLANT-002",
+                material_no="MAT-PLANT-001",
+                delivery_plant="1200",
+                drawing_released=True,
+                confirmed_delivery_date=datetime(2026, 4, 10),
+            ),
+        ]
+    )
     db_session.add(
         BomRelationSrc(
             machine_material_no="MAT-PLANT-001",
@@ -306,8 +316,10 @@ async def test_auto_bom_backfill_distinguishes_existing_bom_by_plant(db_session)
     )
 
     queue_items = (
-        await db_session.execute(select(BomBackfillQueue).where(BomBackfillQueue.material_no == "MAT-PLANT-001"))
-    ).scalars().all()
+        (await db_session.execute(select(BomBackfillQueue).where(BomBackfillQueue.material_no == "MAT-PLANT-001")))
+        .scalars()
+        .all()
+    )
 
     assert result.candidate_orders == 1
     assert result.candidate_items == 1
@@ -352,20 +364,22 @@ async def test_auto_bom_backfill_consume_syncs_and_closes_issue(db_session, monk
 
     monkeypatch.setattr(
         "app.integration.sap_bom_client.SapBomClient.fetch_bom",
-        AsyncMock(return_value=[
-            {
-                "machine_material_no": "MAT-BOM-003",
-                "machine_material_desc": "machine",
-                "material_no": "MAT-BOM-003",
-                "material_desc": "machine",
-                "plant": "1100",
-                "bom_component_no": "COMP-003",
-                "bom_component_desc": "component",
-                "part_type": "自产件",
-                "component_qty": 1,
-                "is_self_made": True,
-            }
-        ]),
+        AsyncMock(
+            return_value=[
+                {
+                    "machine_material_no": "MAT-BOM-003",
+                    "machine_material_desc": "machine",
+                    "material_no": "MAT-BOM-003",
+                    "material_desc": "machine",
+                    "plant": "1100",
+                    "bom_component_no": "COMP-003",
+                    "bom_component_desc": "component",
+                    "part_type": "自产件",
+                    "component_qty": 1,
+                    "is_self_made": True,
+                }
+            ]
+        ),
     )
 
     service = AutoBomBackfillService(session_factory=_SessionFactory(db_session))
@@ -379,8 +393,10 @@ async def test_auto_bom_backfill_consume_syncs_and_closes_issue(db_session, monk
         await db_session.execute(select(BomBackfillQueue).where(BomBackfillQueue.material_no == "MAT-BOM-003"))
     ).scalar_one()
     bom_rows = (
-        await db_session.execute(select(BomRelationSrc).where(BomRelationSrc.machine_material_no == "MAT-BOM-003"))
-    ).scalars().all()
+        (await db_session.execute(select(BomRelationSrc).where(BomRelationSrc.machine_material_no == "MAT-BOM-003")))
+        .scalars()
+        .all()
+    )
     snapshot = (
         await db_session.execute(select(OrderScheduleSnapshot).where(OrderScheduleSnapshot.order_line_id == order.id))
     ).scalar_one_or_none()
@@ -433,22 +449,24 @@ async def test_auto_bom_backfill_consume_marks_retry_wait_on_transient_error(db_
 
 @pytest.mark.asyncio
 async def test_auto_bom_backfill_consume_uses_batch_queue_reload(db_session, monkeypatch):
-    db_session.add_all([
-        BomBackfillQueue(
-            material_no="MAT-CONSUME-001",
-            plant="1100",
-            source="sales_plan_sync",
-            trigger_reason="sales_plan_or_drawing_updated",
-            status=BomBackfillQueueStatus.PENDING.value,
-        ),
-        BomBackfillQueue(
-            material_no="MAT-CONSUME-002",
-            plant="1100",
-            source="sales_plan_sync",
-            trigger_reason="sales_plan_or_drawing_updated",
-            status=BomBackfillQueueStatus.PENDING.value,
-        ),
-    ])
+    db_session.add_all(
+        [
+            BomBackfillQueue(
+                material_no="MAT-CONSUME-001",
+                plant="1100",
+                source="sales_plan_sync",
+                trigger_reason="sales_plan_or_drawing_updated",
+                status=BomBackfillQueueStatus.PENDING.value,
+            ),
+            BomBackfillQueue(
+                material_no="MAT-CONSUME-002",
+                plant="1100",
+                source="sales_plan_sync",
+                trigger_reason="sales_plan_or_drawing_updated",
+                status=BomBackfillQueueStatus.PENDING.value,
+            ),
+        ]
+    )
     await db_session.commit()
 
     original_find_by_ids = BomBackfillQueueRepo.find_by_ids
@@ -465,10 +483,12 @@ async def test_auto_bom_backfill_consume_uses_batch_queue_reload(db_session, mon
 
     monkeypatch.setattr(
         "app.integration.sap_bom_client.SapBomClient.fetch_bom",
-        AsyncMock(side_effect=[
-            httpx.ReadTimeout("timeout"),
-            httpx.ReadTimeout("timeout"),
-        ]),
+        AsyncMock(
+            side_effect=[
+                httpx.ReadTimeout("timeout"),
+                httpx.ReadTimeout("timeout"),
+            ]
+        ),
     )
     monkeypatch.setattr(BomBackfillQueueRepo, "get_by_id", fail_single_lookup)
     monkeypatch.setattr(BomBackfillQueueRepo, "find_by_ids", track_find_by_ids)

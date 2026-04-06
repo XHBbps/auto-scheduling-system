@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from socket import gethostname
-from typing import Any, Callable
+from typing import Any
 from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -205,8 +206,7 @@ class SyncSchedulerControlService:
         items: list[dict[str, Any]] = []
         for definition in build_sync_scheduler_job_definitions():
             if definition.id == "bom_backfill_queue_consume" and (
-                not settings.bom_backfill_queue_consume_enabled
-                or settings.bom_backfill_queue_consume_minutes <= 0
+                not settings.bom_backfill_queue_consume_enabled or settings.bom_backfill_queue_consume_minutes <= 0
             ):
                 continue
             trigger = definition.build_trigger(timezone)
@@ -247,8 +247,7 @@ class SyncSchedulerService:
     def _register_jobs(self) -> None:
         for definition in self._definitions:
             if definition.id == "bom_backfill_queue_consume" and (
-                not settings.bom_backfill_queue_consume_enabled
-                or settings.bom_backfill_queue_consume_minutes <= 0
+                not settings.bom_backfill_queue_consume_enabled or settings.bom_backfill_queue_consume_minutes <= 0
             ):
                 continue
             self.scheduler.add_job(
@@ -288,7 +287,9 @@ class SyncSchedulerService:
     async def run_forever(self) -> None:
         if self.scheduler.state == STATE_STOPPED:
             self.scheduler.start(paused=True)
-        logger.info("Sync scheduler started: instance_id=%s timezone=%s", self.instance_id, settings.sync_scheduler_timezone)
+        logger.info(
+            "Sync scheduler started: instance_id=%s timezone=%s", self.instance_id, settings.sync_scheduler_timezone
+        )
         try:
             while True:
                 await self._sync_control_state()

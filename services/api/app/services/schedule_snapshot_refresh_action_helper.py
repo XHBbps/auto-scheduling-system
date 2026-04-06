@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Awaitable, Callable, Sequence
+from collections.abc import Awaitable, Callable, Sequence
 
 from app.common.enums import ScheduleStatus
 from app.models.machine_schedule_result import MachineScheduleResult

@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, Query
-from typing import Optional
-from sqlalchemy import select, and_, desc, func, case
+from sqlalchemy import and_, case, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.auth import CurrentUserIdentity, require_permission
@@ -40,7 +39,7 @@ def _serialize_bom_row(i: BomRelationSrc) -> dict:
     }
 
 
-def _parse_machine_material_nos(machine_material_no: Optional[str]) -> list[str]:
+def _parse_machine_material_nos(machine_material_no: str | None) -> list[str]:
     if not machine_material_no:
         return []
 
@@ -117,34 +116,38 @@ async def _build_root_nodes(
     if machine_material_nos:
         base_stmt = base_stmt.where(BomRelationSrc.machine_material_no.in_(machine_material_nos))
 
-    summary_rows = (await session.execute(
-        base_stmt.group_by(BomRelationSrc.machine_material_no).order_by(BomRelationSrc.machine_material_no)
-    )).all()
+    summary_rows = (
+        await session.execute(
+            base_stmt.group_by(BomRelationSrc.machine_material_no).order_by(BomRelationSrc.machine_material_no)
+        )
+    ).all()
     if not summary_rows:
         return []
 
     roots: list[dict] = []
     for machine_no, machine_desc, plant, latest_sync_time, has_children_flag in summary_rows:
-        roots.append({
-            "id": 0,
-            "node_key": f"bom-root-{machine_no}",
-            "machine_material_no": machine_no,
-            "plant": plant,
-            "parent_material_no": None,
-            "parent_material_desc": None,
-            "material_no": machine_no,
-            "material_desc": machine_desc,
-            "part_type": "整机",
-            "component_qty": 1,
-            "bom_level": 0,
-            "is_top_level": True,
-            "is_self_made": True,
-            "sync_time": latest_sync_time.isoformat() if latest_sync_time else None,
-            "created_at": None,
-            "has_children": bool(has_children_flag),
-            "children_loaded": False,
-            "children": [],
-        })
+        roots.append(
+            {
+                "id": 0,
+                "node_key": f"bom-root-{machine_no}",
+                "machine_material_no": machine_no,
+                "plant": plant,
+                "parent_material_no": None,
+                "parent_material_desc": None,
+                "material_no": machine_no,
+                "material_desc": machine_desc,
+                "part_type": "整机",
+                "component_qty": 1,
+                "bom_level": 0,
+                "is_top_level": True,
+                "is_self_made": True,
+                "sync_time": latest_sync_time.isoformat() if latest_sync_time else None,
+                "created_at": None,
+                "has_children": bool(has_children_flag),
+                "children_loaded": False,
+                "children": [],
+            }
+        )
 
     return roots
 
@@ -156,14 +159,14 @@ async def _build_root_nodes(
     response_model=ApiResponse[PageResult[BomRelationItemResponse]],
 )
 async def list_bom_relations(
-    machine_material_no: Optional[str] = None,
-    material_no: Optional[str] = None,
-    bom_component_no: Optional[str] = None,
-    part_type: Optional[str] = None,
+    machine_material_no: str | None = None,
+    material_no: str | None = None,
+    bom_component_no: str | None = None,
+    part_type: str | None = None,
     page_no: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    sort_field: Optional[str] = None,
-    sort_order: Optional[str] = None,
+    sort_field: str | None = None,
+    sort_order: str | None = None,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_data_source_view_permission),
 ):
@@ -215,12 +218,14 @@ async def list_bom_relations(
     )
     items = (await session.execute(stmt)).scalars().all()
 
-    return ApiResponse.ok(data={
-        "total": total,
-        "page_no": page_no,
-        "page_size": page_size,
-        "items": [_serialize_bom_row(i) for i in items],
-    })
+    return ApiResponse.ok(
+        data={
+            "total": total,
+            "page_no": page_no,
+            "page_size": page_size,
+            "items": [_serialize_bom_row(i) for i in items],
+        }
+    )
 
 
 @router.get(
@@ -230,7 +235,7 @@ async def list_bom_relations(
     response_model=ApiResponse[BomTreeRootsResponse],
 )
 async def get_bom_tree(
-    machine_material_no: Optional[str] = Query(None, description="整机物料号，支持英文逗号、中文逗号、换行分隔多个值。"),
+    machine_material_no: str | None = Query(None, description="整机物料号，支持英文逗号、中文逗号、换行分隔多个值。"),
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_data_source_view_permission),
 ):
@@ -240,14 +245,16 @@ async def get_bom_tree(
     if not machine_material_nos:
         total = len(roots)
 
-    return ApiResponse.ok(data={
-        "machine_material_no": machine_material_no,
-        "machine_material_nos": machine_material_nos,
-        "total": total,
-        "root_count": len(roots),
-        "root": roots[0] if len(roots) == 1 else None,
-        "roots": roots,
-    })
+    return ApiResponse.ok(
+        data={
+            "machine_material_no": machine_material_no,
+            "machine_material_nos": machine_material_nos,
+            "total": total,
+            "root_count": len(roots),
+            "root": roots[0] if len(roots) == 1 else None,
+            "roots": roots,
+        }
+    )
 
 
 @router.get(
@@ -293,11 +300,7 @@ async def get_bom_tree_children(
 
     rows = list((await session.execute(stmt)).scalars().all())
 
-    child_material_nos = [
-        row.bom_component_no
-        for row in rows
-        if row.bom_component_no
-    ]
+    child_material_nos = [row.bom_component_no for row in rows if row.bom_component_no]
     has_children_material_nos = await _query_has_children_material_nos(
         session,
         machine_material_no=machine_material_no,
@@ -312,14 +315,16 @@ async def get_bom_tree_children(
         for row in rows
     ]
 
-    return ApiResponse.ok(data={
-        "machine_material_no": machine_material_no,
-        "parent_material_no": parent_material_no,
-        "total": total,
-        "count": len(items),
-        "offset": offset,
-        "limit": limit,
-        "has_more": (offset + len(items)) < total,
-        "next_offset": offset + len(items),
-        "items": items,
-    })
+    return ApiResponse.ok(
+        data={
+            "machine_material_no": machine_material_no,
+            "parent_material_no": parent_material_no,
+            "total": total,
+            "count": len(items),
+            "offset": offset,
+            "limit": limit,
+            "has_more": (offset + len(items)) < total,
+            "next_offset": offset + len(items),
+            "items": items,
+        }
+    )

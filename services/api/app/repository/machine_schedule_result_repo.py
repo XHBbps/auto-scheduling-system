@@ -1,6 +1,8 @@
+from collections.abc import Sequence
 from datetime import datetime, timedelta
-from typing import Any, Sequence
-from sqlalchemy import select, func, and_, delete
+from typing import Any
+
+from sqlalchemy import and_, delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.machine_schedule_result import MachineScheduleResult
@@ -29,12 +31,8 @@ class MachineScheduleResultRepo(BaseRepository[MachineScheduleResult]):
         except ValueError:
             return None
 
-    async def upsert_by_order_line_id(
-        self, order_line_id: int, data: dict[str, Any]
-    ) -> MachineScheduleResult:
-        stmt = select(MachineScheduleResult).where(
-            MachineScheduleResult.order_line_id == order_line_id
-        )
+    async def upsert_by_order_line_id(self, order_line_id: int, data: dict[str, Any]) -> MachineScheduleResult:
+        stmt = select(MachineScheduleResult).where(MachineScheduleResult.order_line_id == order_line_id)
         result = await self.session.execute(stmt)
         existing = result.scalar_one_or_none()
         if existing:
@@ -46,9 +44,7 @@ class MachineScheduleResultRepo(BaseRepository[MachineScheduleResult]):
         return await self.add(entity)
 
     async def find_by_order_line_id(self, order_line_id: int) -> MachineScheduleResult | None:
-        stmt = select(MachineScheduleResult).where(
-            MachineScheduleResult.order_line_id == order_line_id
-        )
+        stmt = select(MachineScheduleResult).where(MachineScheduleResult.order_line_id == order_line_id)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
@@ -58,16 +54,12 @@ class MachineScheduleResultRepo(BaseRepository[MachineScheduleResult]):
     ) -> Sequence[MachineScheduleResult]:
         if not order_line_ids:
             return []
-        stmt = select(MachineScheduleResult).where(
-            MachineScheduleResult.order_line_id.in_(order_line_ids)
-        )
+        stmt = select(MachineScheduleResult).where(MachineScheduleResult.order_line_id.in_(order_line_ids))
         result = await self.session.execute(stmt)
         return result.scalars().all()
 
     async def delete_by_order_line_id(self, order_line_id: int) -> int:
-        stmt = delete(MachineScheduleResult).where(
-            MachineScheduleResult.order_line_id == order_line_id
-        )
+        stmt = delete(MachineScheduleResult).where(MachineScheduleResult.order_line_id == order_line_id)
         result = await self.session.execute(stmt)
         await self.session.flush()
         return result.rowcount
@@ -109,8 +101,6 @@ class MachineScheduleResultRepo(BaseRepository[MachineScheduleResult]):
             count_base = count_base.where(and_(*conditions))
 
         total = (await self.session.execute(count_base)).scalar_one()
-        stmt = base.order_by(MachineScheduleResult.id.desc()).offset(
-            (page_no - 1) * page_size
-        ).limit(page_size)
+        stmt = base.order_by(MachineScheduleResult.id.desc()).offset((page_no - 1) * page_size).limit(page_size)
         items = (await self.session.execute(stmt)).scalars().all()
         return items, total

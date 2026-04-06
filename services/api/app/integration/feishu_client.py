@@ -1,9 +1,10 @@
 import asyncio
-import time
 import logging
+import time
 from typing import Any
 
 from app.integration.http_client import ExternalHttpClient
+
 logger = logging.getLogger(__name__)
 
 FEISHU_BASE_URL = "https://open.feishu.cn"
@@ -63,11 +64,7 @@ class FeishuClient:
         if page_token:
             query += f"&page_token={page_token}"
 
-        url = (
-            f"{FEISHU_BASE_URL}/open-apis/bitable/v1/apps/{app_token}"
-            f"/tables/{table_id}/records/search"
-            f"?{query}"
-        )
+        url = f"{FEISHU_BASE_URL}/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records/search?{query}"
         resp = await self.http_client.request(
             "POST",
             url,

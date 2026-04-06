@@ -1,6 +1,8 @@
-from typing import Any, Sequence
+from collections.abc import Sequence
 from decimal import Decimal
-from sqlalchemy import select, and_
+from typing import Any
+
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.machine_cycle_baseline import MachineCycleBaseline
@@ -24,9 +26,7 @@ class MachineCycleBaselineRepo(BaseRepository[MachineCycleBaseline]):
             )
         )
 
-    async def find_by_model_and_qty(
-        self, machine_model: str, order_qty: Decimal
-    ) -> MachineCycleBaseline | None:
+    async def find_by_model_and_qty(self, machine_model: str, order_qty: Decimal) -> MachineCycleBaseline | None:
         stmt = self._ordered_stmt(
             MachineCycleBaseline.machine_model == machine_model,
             MachineCycleBaseline.order_qty == order_qty,
@@ -66,7 +66,10 @@ class MachineCycleBaselineRepo(BaseRepository[MachineCycleBaseline]):
         return updated
 
     async def upsert_baseline(
-        self, product_series: str, machine_model: str, order_qty: Decimal,
+        self,
+        product_series: str,
+        machine_model: str,
+        order_qty: Decimal,
         data: dict[str, Any],
     ) -> MachineCycleBaseline:
         stmt = self._ordered_stmt(

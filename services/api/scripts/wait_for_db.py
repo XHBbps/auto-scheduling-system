@@ -32,14 +32,11 @@ async def wait_for_database() -> None:
         finally:
             await engine.dispose()
 
-    raise RuntimeError(
-        f"Database was not ready within {settings.wait_for_db_timeout_seconds} seconds."
-    ) from last_error
+    raise RuntimeError(f"Database was not ready within {settings.wait_for_db_timeout_seconds} seconds.") from last_error
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
-    )
+    from app.common.logging_setup import configure_logging
+
+    configure_logging()
     asyncio.run(wait_for_database())

@@ -22,9 +22,7 @@ class MachineCycleBaselineService:
         """Rebuild all machine cycle baselines from history data."""
         await self.repo.deactivate_duplicate_active_rows()
 
-        stmt = select(MachineCycleHistorySrc).where(
-            MachineCycleHistorySrc.cycle_days.isnot(None)
-        )
+        stmt = select(MachineCycleHistorySrc).where(MachineCycleHistorySrc.cycle_days.isnot(None))
         result = await self.session.execute(stmt)
         rows = result.scalars().all()
 

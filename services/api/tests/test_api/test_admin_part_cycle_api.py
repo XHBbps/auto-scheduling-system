@@ -1,6 +1,7 @@
-﻿import pytest
 from datetime import datetime
 from decimal import Decimal
+
+import pytest
 from sqlalchemy import select
 
 from app.models.background_task import BackgroundTask
@@ -150,9 +151,7 @@ async def test_save_part_cycle_baseline_triggers_snapshot_refresh(app_client, db
     assert resp.json()["code"] == 0
 
     snapshot = (
-        await db_session.execute(
-            select(OrderScheduleSnapshot).where(OrderScheduleSnapshot.order_line_id == order.id)
-        )
+        await db_session.execute(select(OrderScheduleSnapshot).where(OrderScheduleSnapshot.order_line_id == order.id))
     ).scalar_one_or_none()
 
     assert snapshot is not None
@@ -191,7 +190,9 @@ async def test_save_part_cycle_baseline_normalizes_cycle_precision(app_client):
     )
     assert create_resp.json()["code"] == 0
 
-    list_resp = await app_client.get("/api/admin/part-cycle-baselines?part_type=\u5e73\u8861\u7f38&machine_model=MC1-80-PRECISION&plant=1100")
+    list_resp = await app_client.get(
+        "/api/admin/part-cycle-baselines?part_type=\u5e73\u8861\u7f38&machine_model=MC1-80-PRECISION&plant=1100"
+    )
     body = list_resp.json()
 
     assert body["code"] == 0
@@ -222,7 +223,9 @@ async def test_list_part_cycle_baselines_rounds_existing_high_precision_values(a
     )
     await db_session.commit()
 
-    list_resp = await app_client.get("/api/admin/part-cycle-baselines?part_type=\u5e73\u8861\u7f38&machine_model=MC1-80-EXISTING&plant=1100")
+    list_resp = await app_client.get(
+        "/api/admin/part-cycle-baselines?part_type=\u5e73\u8861\u7f38&machine_model=MC1-80-EXISTING&plant=1100"
+    )
     body = list_resp.json()
 
     assert body["code"] == 0

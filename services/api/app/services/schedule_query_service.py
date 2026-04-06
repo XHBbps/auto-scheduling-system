@@ -1,4 +1,4 @@
-﻿from datetime import date, timedelta
+from datetime import date, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -141,8 +141,7 @@ class ScheduleQueryService:
         abnormal_orders = machine_dashboard_summary["abnormal_orders"]
 
         planned_end_month_counts = [
-            {"key": month, "count": count}
-            for month, count in machine_dashboard_summary["planned_end_month_counts"]
+            {"key": month, "count": count} for month, count in machine_dashboard_summary["planned_end_month_counts"]
         ]
 
         warning_orders = await self.snapshot_repo.list_warning_orders(limit=10)
@@ -151,7 +150,9 @@ class ScheduleQueryService:
         today = date.today()
 
         planned_end_day_raw = await self.snapshot_repo.aggregate_quantity_by_day(
-            "planned_end_date", today - timedelta(days=14), today + timedelta(days=15),
+            "planned_end_date",
+            today - timedelta(days=14),
+            today + timedelta(days=15),
         )
         planned_end_day_counts = [
             {"key": day.isoformat(), "count": int(data.get("order_count", 0))}
@@ -192,10 +193,7 @@ class ScheduleQueryService:
         part_dashboard_summary = await self.psr_repo.get_dashboard_summary(top_assembly_limit=10)
         total_parts = part_dashboard_summary["total_parts"]
         abnormal_parts = part_dashboard_summary["abnormal_parts"]
-        warning_counts = [
-            {"key": level, "count": count}
-            for level, count in part_dashboard_summary["warning_counts"]
-        ]
+        warning_counts = [{"key": level, "count": count} for level, count in part_dashboard_summary["warning_counts"]]
         top_assemblies = [
             {"assembly_name": assembly_name, "count": count}
             for assembly_name, count in part_dashboard_summary["top_assemblies"]
@@ -238,11 +236,21 @@ class ScheduleQueryService:
         month_end = _shift_month(month_start, 1)
 
         daily_scheduled = await self.snapshot_repo.aggregate_quantity_by_day("planned_start_date", day_start, day_end)
-        daily_delivery = await self.snapshot_repo.aggregate_quantity_by_day("confirmed_delivery_date", day_start, day_end)
-        weekly_scheduled = await self.snapshot_repo.aggregate_quantity_by_day("planned_start_date", first_week_start, week_end)
-        weekly_delivery = await self.snapshot_repo.aggregate_quantity_by_day("confirmed_delivery_date", first_week_start, week_end)
-        monthly_scheduled = await self.snapshot_repo.aggregate_quantity_by_day("planned_start_date", first_month_start, month_end)
-        monthly_delivery = await self.snapshot_repo.aggregate_quantity_by_day("confirmed_delivery_date", first_month_start, month_end)
+        daily_delivery = await self.snapshot_repo.aggregate_quantity_by_day(
+            "confirmed_delivery_date", day_start, day_end
+        )
+        weekly_scheduled = await self.snapshot_repo.aggregate_quantity_by_day(
+            "planned_start_date", first_week_start, week_end
+        )
+        weekly_delivery = await self.snapshot_repo.aggregate_quantity_by_day(
+            "confirmed_delivery_date", first_week_start, week_end
+        )
+        monthly_scheduled = await self.snapshot_repo.aggregate_quantity_by_day(
+            "planned_start_date", first_month_start, month_end
+        )
+        monthly_delivery = await self.snapshot_repo.aggregate_quantity_by_day(
+            "confirmed_delivery_date", first_month_start, month_end
+        )
 
         return {
             "day": _build_day_trend_points(day_start, 30, daily_scheduled, daily_delivery),
@@ -269,15 +277,17 @@ class ScheduleQueryService:
         current = month_start
         while current < month_end:
             summary = distribution_map.get(current, {})
-            items.append({
-                "calendar_date": current,
-                "delivery_order_count": int(summary.get("delivery_order_count", 0)),
-                "delivery_quantity_sum": summary.get("delivery_quantity_sum", self._zero_quantity()),
-                "trigger_order_count": int(summary.get("trigger_order_count", 0)),
-                "trigger_quantity_sum": summary.get("trigger_quantity_sum", self._zero_quantity()),
-                "planned_start_order_count": int(summary.get("planned_start_order_count", 0)),
-                "planned_start_quantity_sum": summary.get("planned_start_quantity_sum", self._zero_quantity()),
-            })
+            items.append(
+                {
+                    "calendar_date": current,
+                    "delivery_order_count": int(summary.get("delivery_order_count", 0)),
+                    "delivery_quantity_sum": summary.get("delivery_quantity_sum", self._zero_quantity()),
+                    "trigger_order_count": int(summary.get("trigger_order_count", 0)),
+                    "trigger_quantity_sum": summary.get("trigger_quantity_sum", self._zero_quantity()),
+                    "planned_start_order_count": int(summary.get("planned_start_order_count", 0)),
+                    "planned_start_quantity_sum": summary.get("planned_start_quantity_sum", self._zero_quantity()),
+                }
+            )
             current = current.fromordinal(current.toordinal() + 1)
 
         return items
@@ -316,12 +326,14 @@ def _build_day_trend_points(
     points: list[dict[str, int | str]] = []
     for offset in range(total_days):
         current = start_date + timedelta(days=offset)
-        points.append({
-            "key": current.isoformat(),
-            "label": current.strftime("%m-%d"),
-            "scheduled_count": int(scheduled.get(current, {}).get("order_count", 0)),
-            "delivery_count": int(delivery.get(current, {}).get("order_count", 0)),
-        })
+        points.append(
+            {
+                "key": current.isoformat(),
+                "label": current.strftime("%m-%d"),
+                "scheduled_count": int(scheduled.get(current, {}).get("order_count", 0)),
+                "delivery_count": int(delivery.get(current, {}).get("order_count", 0)),
+            }
+        )
     return points
 
 
@@ -335,12 +347,14 @@ def _build_week_trend_points(
     for offset in range(total_weeks):
         bucket_start = start_date + timedelta(weeks=offset)
         bucket_end = bucket_start + timedelta(days=7)
-        points.append({
-            "key": bucket_start.isoformat(),
-            "label": bucket_start.strftime("%m-%d"),
-            "scheduled_count": _count_orders_in_range(scheduled, bucket_start, bucket_end),
-            "delivery_count": _count_orders_in_range(delivery, bucket_start, bucket_end),
-        })
+        points.append(
+            {
+                "key": bucket_start.isoformat(),
+                "label": bucket_start.strftime("%m-%d"),
+                "scheduled_count": _count_orders_in_range(scheduled, bucket_start, bucket_end),
+                "delivery_count": _count_orders_in_range(delivery, bucket_start, bucket_end),
+            }
+        )
     return points
 
 
@@ -354,10 +368,12 @@ def _build_month_trend_points(
     for offset in range(total_months):
         bucket_start = _shift_month(start_date, offset)
         bucket_end = _shift_month(bucket_start, 1)
-        points.append({
-            "key": bucket_start.strftime("%Y-%m"),
-            "label": bucket_start.strftime("%Y-%m"),
-            "scheduled_count": _count_orders_in_range(scheduled, bucket_start, bucket_end),
-            "delivery_count": _count_orders_in_range(delivery, bucket_start, bucket_end),
-        })
+        points.append(
+            {
+                "key": bucket_start.strftime("%Y-%m"),
+                "label": bucket_start.strftime("%Y-%m"),
+                "scheduled_count": _count_orders_in_range(scheduled, bucket_start, bucket_end),
+                "delivery_count": _count_orders_in_range(delivery, bucket_start, bucket_end),
+            }
+        )
     return points

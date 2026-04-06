@@ -1,7 +1,8 @@
-import pytest
-from unittest.mock import AsyncMock
 from datetime import datetime
 from decimal import Decimal
+from unittest.mock import AsyncMock
+
+import pytest
 from sqlalchemy import select
 
 from app.models.assembly_time import AssemblyTimeBaseline
@@ -9,18 +10,22 @@ from app.models.bom_relation import BomRelationSrc
 from app.models.machine_cycle_baseline import MachineCycleBaseline
 from app.models.order_schedule_snapshot import OrderScheduleSnapshot
 from app.models.sales_plan import SalesPlanOrderLineSrc
+from app.repository.bom_relation_repo import BomRelationRepo
 from app.scheduler.schedule_orchestrator import ScheduleOrchestrator
 from app.sync.bom_sync_service import BomSyncService
-from app.repository.bom_relation_repo import BomRelationRepo
 
 
 @pytest.mark.asyncio
 async def test_sync_bom_delete_insert(db_session):
     # Pre-insert old BOM data
-    db_session.add(BomRelationSrc(
-        machine_material_no="MACH001", plant="1000",
-        bom_component_no="OLD_COMP", bom_level=1,
-    ))
+    db_session.add(
+        BomRelationSrc(
+            machine_material_no="MACH001",
+            plant="1000",
+            bom_component_no="OLD_COMP",
+            bom_level=1,
+        )
+    )
     await db_session.commit()
 
     mock_client = AsyncMock()
@@ -52,9 +57,7 @@ async def test_sync_bom_delete_insert(db_session):
     ]
 
     service = BomSyncService(db_session, mock_client)
-    result = await service.sync_for_order(
-        machine_material_no="MACH001", plant="1000"
-    )
+    result = await service.sync_for_order(machine_material_no="MACH001", plant="1000")
     await db_session.commit()
 
     repo = BomRelationRepo(db_session)
@@ -289,9 +292,7 @@ async def test_sync_bom_keeps_existing_scheduled_snapshot_scheduled(db_session):
     await db_session.commit()
 
     snapshot = (
-        await db_session.execute(
-            select(OrderScheduleSnapshot).where(OrderScheduleSnapshot.order_line_id == order.id)
-        )
+        await db_session.execute(select(OrderScheduleSnapshot).where(OrderScheduleSnapshot.order_line_id == order.id))
     ).scalar_one()
 
     assert sync_result.fail_count == 0

@@ -1,6 +1,8 @@
-import pytest
-from app.models import WorkCalendar
 from datetime import date
+
+import pytest
+
+from app.models import WorkCalendar
 
 
 @pytest.mark.asyncio

@@ -3,7 +3,6 @@ from __future__ import annotations
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.datetime_utils import utc_now
-
 from app.config import settings
 from app.models.sync_scheduler_state import SyncSchedulerState
 from app.repository.base import BaseRepository

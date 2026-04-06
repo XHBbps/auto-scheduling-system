@@ -1,29 +1,32 @@
 import pytest
+
 from app.models import DataIssueRecord
 from app.repository.data_issue_repo import DataIssueRepo
 
 
 @pytest.mark.asyncio
 async def test_paginate_with_filter(db_session):
-    db_session.add_all([
-        DataIssueRecord(issue_type="sync", issue_title="问题1", status="open"),
-        DataIssueRecord(issue_type="sync", issue_title="问题2", status="resolved"),
-        DataIssueRecord(issue_type="baseline", issue_title="问题3", status="open"),
-    ])
+    db_session.add_all(
+        [
+            DataIssueRecord(issue_type="sync", issue_title="问题1", status="open"),
+            DataIssueRecord(issue_type="sync", issue_title="问题2", status="resolved"),
+            DataIssueRecord(issue_type="baseline", issue_title="问题3", status="open"),
+        ]
+    )
     await db_session.commit()
 
     repo = DataIssueRepo(db_session)
 
     # No filter
-    items, total = await repo.paginate(page_no=1, page_size=10)
+    _items, total = await repo.paginate(page_no=1, page_size=10)
     assert total == 3
 
     # Filter by status
-    items, total = await repo.paginate(page_no=1, page_size=10, status="open")
+    _items, total = await repo.paginate(page_no=1, page_size=10, status="open")
     assert total == 2
 
     # Filter by type
-    items, total = await repo.paginate(page_no=1, page_size=10, issue_type="sync")
+    _items, total = await repo.paginate(page_no=1, page_size=10, issue_type="sync")
     assert total == 2
 
 
@@ -202,7 +205,7 @@ async def test_upsert_open_issue_dedupes_historical_duplicate_open_issues(db_ses
     )
     await db_session.commit()
 
-    rows = (await repo.list_all())
+    rows = await repo.list_all()
     open_rows = [row for row in rows if row.status == "open"]
     resolved_rows = [row for row in rows if row.status == "resolved"]
 

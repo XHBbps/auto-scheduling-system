@@ -105,7 +105,9 @@ class RoleStatusUpdateRequest(BaseModel):
 
 
 class RolePermissionUpdateRequest(BaseModel):
-    permission_codes: list[str] = Field(default_factory=list, description="权限编码列表；传空表示清空当前角色的所有自定义权限")
+    permission_codes: list[str] = Field(
+        default_factory=list, description="权限编码列表；传空表示清空当前角色的所有自定义权限"
+    )
 
 
 class AdminRoleItemResponse(BaseModel):
@@ -153,12 +155,16 @@ class AdminPermissionMatrixCellResponse(BaseModel):
 
 
 class AdminPermissionMatrixPermissionItemResponse(AdminPermissionItemResponse):
-    role_bindings: list[AdminPermissionMatrixCellResponse] = Field(default_factory=list, description="权限与角色的绑定矩阵")
+    role_bindings: list[AdminPermissionMatrixCellResponse] = Field(
+        default_factory=list, description="权限与角色的绑定矩阵"
+    )
 
 
 class AdminPermissionMatrixResponse(BaseModel):
     roles: list[AdminPermissionMatrixRoleItemResponse] = Field(default_factory=list, description="矩阵中的角色列表")
-    permissions: list[AdminPermissionMatrixPermissionItemResponse] = Field(default_factory=list, description="矩阵中的权限列表")
+    permissions: list[AdminPermissionMatrixPermissionItemResponse] = Field(
+        default_factory=list, description="矩阵中的权限列表"
+    )
 
 
 class AdminPermissionRouteLinkItemResponse(BaseModel):
@@ -170,8 +176,12 @@ class AdminPermissionRouteLinkItemResponse(BaseModel):
 
 
 class AdminPermissionLinkageItemResponse(AdminPermissionItemResponse):
-    linked_routes: list[AdminPermissionRouteLinkItemResponse] = Field(default_factory=list, description="该权限点关联的后端接口列表")
+    linked_routes: list[AdminPermissionRouteLinkItemResponse] = Field(
+        default_factory=list, description="该权限点关联的后端接口列表"
+    )
 
 
 class AdminPermissionLinkageResponse(BaseModel):
-    items: list[AdminPermissionLinkageItemResponse] = Field(default_factory=list, description="权限点与后端接口联动清单")
+    items: list[AdminPermissionLinkageItemResponse] = Field(
+        default_factory=list, description="权限点与后端接口联动清单"
+    )

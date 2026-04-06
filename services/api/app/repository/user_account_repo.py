@@ -8,7 +8,6 @@ from app.models.user_account import UserAccount
 from app.models.user_role import UserRole
 from app.repository.base import BaseRepository
 
-
 _USER_WITH_ROLES_OPTIONS = (
     selectinload(UserAccount.role_links)
     .selectinload(UserRole.role)

@@ -47,13 +47,15 @@ async def backfill_bom_levels(
             rows_scanned += len(group_rows)
             payload_rows: list[dict[str, object]] = []
             for row in group_rows:
-                payload_rows.append({
-                    "material_no": row.material_no,
-                    "bom_component_no": row.bom_component_no,
-                    "bom_level": row.bom_level,
-                    "is_top_level": row.is_top_level,
-                    "__row__": row,
-                })
+                payload_rows.append(
+                    {
+                        "material_no": row.material_no,
+                        "bom_component_no": row.bom_component_no,
+                        "bom_level": row.bom_level,
+                        "is_top_level": row.is_top_level,
+                        "__row__": row,
+                    }
+                )
 
             _compute_bom_levels(payload_rows, current_machine_material_no)
 
@@ -100,10 +102,9 @@ def main() -> None:
     parser.add_argument("--plant", help="Only backfill one plant after normalization.")
     args = parser.parse_args()
 
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
-    )
+    from app.common.logging_setup import configure_logging
+
+    configure_logging()
     asyncio.run(
         run(
             dry_run=args.dry_run,

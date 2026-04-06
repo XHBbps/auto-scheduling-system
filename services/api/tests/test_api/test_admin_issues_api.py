@@ -1,11 +1,14 @@
 import pytest
+
 from app.models.data_issue import DataIssueRecord
 
 
 @pytest.mark.asyncio
 async def test_resolve_issue(app_client, db_session):
     issue = DataIssueRecord(
-        issue_type="周期异常", issue_title="测试", status="open",
+        issue_type="周期异常",
+        issue_title="测试",
+        status="open",
     )
     db_session.add(issue)
     await db_session.commit()
@@ -22,7 +25,9 @@ async def test_resolve_issue(app_client, db_session):
 @pytest.mark.asyncio
 async def test_ignore_issue(app_client, db_session):
     issue = DataIssueRecord(
-        issue_type="数据异常", issue_title="测试2", status="open",
+        issue_type="数据异常",
+        issue_title="测试2",
+        status="open",
     )
     db_session.add(issue)
     await db_session.commit()

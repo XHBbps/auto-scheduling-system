@@ -1,5 +1,6 @@
-import pytest
 from decimal import Decimal
+
+import pytest
 
 from app.baseline.assembly_time_default_service import AssemblyTimeDefaultService
 from app.repository.assembly_time_repo import AssemblyTimeRepo

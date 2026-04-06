@@ -1,8 +1,9 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import pytest
 
 from app.common.datetime_utils import utc_now
+from app.repository.sync_job_log_repo import SyncJobLogRepo
 from app.sync.sync_support_utils import (
     SyncResult,
     finish_sync_job,
@@ -10,7 +11,6 @@ from app.sync.sync_support_utils import (
     start_sync_job,
     touch_sync_job,
 )
-from app.repository.sync_job_log_repo import SyncJobLogRepo
 
 
 @pytest.mark.asyncio
@@ -40,7 +40,7 @@ async def test_sync_result_increment():
 
 @pytest.mark.asyncio
 async def test_start_and_finish_sync_job(db_session):
-    repo = SyncJobLogRepo(db_session)
+    SyncJobLogRepo(db_session)  # ensure repo can be constructed
     job = await start_sync_job(
         db_session,
         job_type="sales_plan",

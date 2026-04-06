@@ -1,6 +1,7 @@
+from collections.abc import Sequence
 from datetime import date, datetime, time
 from decimal import Decimal
-from typing import Any, Sequence
+from typing import Any
 
 from app.common.calendar_utils import subtract_workdays
 from app.common.datetime_utils import utc_now
@@ -19,9 +20,7 @@ def build_order_payload(source_obj: Any) -> dict[str, Any]:
         "product_model": getattr(source_obj, "product_model", None),
         "product_name": getattr(source_obj, "product_name", None),
         "material_no": getattr(source_obj, "material_no", None),
-        "plant": normalize_plant(
-            getattr(source_obj, "delivery_plant", None) or getattr(source_obj, "plant", None)
-        ),
+        "plant": normalize_plant(getattr(source_obj, "delivery_plant", None) or getattr(source_obj, "plant", None)),
         "quantity": getattr(source_obj, "quantity", None),
         "order_type": getattr(source_obj, "order_type", None),
         "line_total_amount": getattr(source_obj, "line_total_amount", None),
@@ -108,8 +107,7 @@ def detect_scheduled_stale_reason(
     changed_fields = [
         field
         for field in schedule_affecting_fields
-        if normalize_value(getattr(order, field, None))
-        != normalize_value(getattr(machine, field, None))
+        if normalize_value(getattr(order, field, None)) != normalize_value(getattr(machine, field, None))
     ]
     if changed_fields:
         return f"sales_plan_changed:{','.join(changed_fields)}"
@@ -133,17 +131,25 @@ def build_dynamic_snapshot_payload(
     machine_cycle_days: Decimal | None = None
     is_default_cycle = False
 
-    delivery = order.confirmed_delivery_date.date() if isinstance(order.confirmed_delivery_date, datetime) else order.confirmed_delivery_date
+    delivery = (
+        order.confirmed_delivery_date.date()
+        if isinstance(order.confirmed_delivery_date, datetime)
+        else order.confirmed_delivery_date
+    )
     if not delivery:
         status = ScheduleStatus.PENDING_DELIVERY
         status_reason = "No confirmed delivery date"
     elif not order.drawing_released:
         status = ScheduleStatus.PENDING_DRAWING
         status_reason = "Drawing not released"
-    elif not order.material_no or (
-        order.material_no,
-        normalize_plant(getattr(order, "delivery_plant", None)),
-    ) not in bom_material_pairs:
+    elif (
+        not order.material_no
+        or (
+            order.material_no,
+            normalize_plant(getattr(order, "delivery_plant", None)),
+        )
+        not in bom_material_pairs
+    ):
         status = ScheduleStatus.MISSING_BOM
         status_reason = "BOM not found"
     else:
@@ -204,7 +210,9 @@ def build_machine_snapshot_payload(
     stale_reason: str | None,
 ) -> dict[str, Any]:
     base_status = machine.schedule_status or ScheduleStatus.SCHEDULED
-    schedule_status = ScheduleStatus.SCHEDULED_STALE if stale_reason and base_status == ScheduleStatus.SCHEDULED else base_status
+    schedule_status = (
+        ScheduleStatus.SCHEDULED_STALE if stale_reason and base_status == ScheduleStatus.SCHEDULED else base_status
+    )
     now = utc_now()
     return {
         "order_line_id": order_line_id,

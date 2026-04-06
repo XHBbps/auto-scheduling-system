@@ -1,18 +1,18 @@
 import logging
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.calendar_utils import subtract_workdays
-from app.models.sales_plan import SalesPlanOrderLineSrc
 from app.models.machine_schedule_result import MachineScheduleResult
 from app.models.part_schedule_result import PartScheduleResult
-from app.scheduler.assembly_identify_service import AssemblyIdentifyService
-from app.scheduler.key_part_identify_service import KeyPartIdentifyService
+from app.models.sales_plan import SalesPlanOrderLineSrc
 from app.repository.part_schedule_result_repo import PartScheduleResultRepo
 from app.repository.work_calendar_repo import WorkCalendarRepo
+from app.scheduler.assembly_identify_service import AssemblyIdentifyService
+from app.scheduler.key_part_identify_service import KeyPartIdentifyService
 
 logger = logging.getLogger(__name__)
 
@@ -50,10 +50,7 @@ class PartScheduleService:
 
         # Machine end date
         machine_end = msr.planned_end_date
-        if isinstance(machine_end, datetime):
-            machine_end_date = machine_end.date()
-        else:
-            machine_end_date = machine_end
+        machine_end_date = machine_end.date() if isinstance(machine_end, datetime) else machine_end
 
         # Load calendar
         start_range = machine_end_date - timedelta(days=365)
@@ -93,9 +90,7 @@ class PartScheduleService:
 
             max_assembly_time = Decimal("0")
             for asm in group:
-                recursive_self_made_parts = list(
-                    recursive_self_made_parts_map.get(asm["bom_component_no"], [])
-                )
+                recursive_self_made_parts = list(recursive_self_made_parts_map.get(asm["bom_component_no"], []))
 
                 # Find key part
                 key_part = self.key_part_service.identify_from_recursive_nodes(
@@ -136,7 +131,11 @@ class PartScheduleService:
                     part_cycle_match_rule = None
                     row = part_node.get("row") if part_node else None
                     if row:
-                        part_cycle_days, part_cycle_is_default, part_cycle_match_rule = await self.key_part_service.get_part_cycle(
+                        (
+                            part_cycle_days,
+                            part_cycle_is_default,
+                            part_cycle_match_rule,
+                        ) = await self.key_part_service.get_part_cycle(
                             row.bom_component_no,
                             order.product_model or "",
                             row.bom_component_desc,
@@ -162,8 +161,7 @@ class PartScheduleService:
                         part_name=row.bom_component_desc if row else None,
                         part_raw_material_desc=row.bom_component_desc if row else None,
                         is_key_part=(
-                            bool(part_node)
-                            and part_node.get("bom_path_key") == key_part_data.get("bom_path_key")
+                            bool(part_node) and part_node.get("bom_path_key") == key_part_data.get("bom_path_key")
                         ),
                         part_cycle_days=part_cycle_days,
                         part_cycle_is_default=part_cycle_is_default,
@@ -194,6 +192,4 @@ class PartScheduleService:
         machine_schedule: MachineScheduleResult,
     ) -> None:
         if machine_schedule.order_line_id != order_line_id:
-            raise ValueError(
-                "machine schedule result does not belong to the requested order_line_id"
-            )
+            raise ValueError("machine schedule result does not belong to the requested order_line_id")

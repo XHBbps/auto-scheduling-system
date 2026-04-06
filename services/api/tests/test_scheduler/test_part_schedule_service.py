@@ -1,21 +1,25 @@
-import pytest
-from decimal import Decimal
 from datetime import datetime
+from decimal import Decimal
 
-from app.models.sales_plan import SalesPlanOrderLineSrc
-from app.models.bom_relation import BomRelationSrc
-from app.models.part_cycle_baseline import PartCycleBaseline
+import pytest
+
 from app.models.assembly_time import AssemblyTimeBaseline
+from app.models.bom_relation import BomRelationSrc
 from app.models.machine_schedule_result import MachineScheduleResult
+from app.models.part_cycle_baseline import PartCycleBaseline
+from app.models.sales_plan import SalesPlanOrderLineSrc
 from app.scheduler.part_schedule_service import PartScheduleService
 
 
 @pytest.mark.asyncio
 async def test_build_part_schedules(db_session):
     order = SalesPlanOrderLineSrc(
-        sap_code="SAP001", sap_line_no="10",
-        product_model="MC1-80", product_series="MC1",
-        material_no="MACH001", quantity=Decimal("1"),
+        sap_code="SAP001",
+        sap_line_no="10",
+        product_model="MC1-80",
+        product_series="MC1",
+        material_no="MACH001",
+        quantity=Decimal("1"),
         confirmed_delivery_date=datetime(2026, 6, 30),
         drawing_released=True,
     )
@@ -32,44 +36,78 @@ async def test_build_part_schedules(db_session):
     )
     db_session.add(msr)
 
-    db_session.add(BomRelationSrc(
-        machine_material_no="MACH001", plant="1000",
-        material_no="MACH001", bom_component_no="ASM_BODY",
-        bom_component_desc="机身MC1-80", bom_level=1,
-        is_top_level=True,
-        is_self_made=True, part_type="自产件",
-    ))
-    db_session.add(BomRelationSrc(
-        machine_material_no="MACH001", plant="1000",
-        material_no="ASM_BODY", bom_component_no="PART_CAST",
-        bom_component_desc="铸件机身", bom_level=2,
-        is_self_made=True, part_type="自产件",
-    ))
-    db_session.add(BomRelationSrc(
-        machine_material_no="MACH001", plant="1000",
-        material_no="ASM_BODY", bom_component_no="PART_PLATE",
-        bom_component_desc="机身板件", bom_level=2,
-        is_self_made=True, part_type="自产件",
-    ))
+    db_session.add(
+        BomRelationSrc(
+            machine_material_no="MACH001",
+            plant="1000",
+            material_no="MACH001",
+            bom_component_no="ASM_BODY",
+            bom_component_desc="机身MC1-80",
+            bom_level=1,
+            is_top_level=True,
+            is_self_made=True,
+            part_type="自产件",
+        )
+    )
+    db_session.add(
+        BomRelationSrc(
+            machine_material_no="MACH001",
+            plant="1000",
+            material_no="ASM_BODY",
+            bom_component_no="PART_CAST",
+            bom_component_desc="铸件机身",
+            bom_level=2,
+            is_self_made=True,
+            part_type="自产件",
+        )
+    )
+    db_session.add(
+        BomRelationSrc(
+            machine_material_no="MACH001",
+            plant="1000",
+            material_no="ASM_BODY",
+            bom_component_no="PART_PLATE",
+            bom_component_desc="机身板件",
+            bom_level=2,
+            is_self_made=True,
+            part_type="自产件",
+        )
+    )
 
-    db_session.add(AssemblyTimeBaseline(
-        machine_model="MC1-80", assembly_name="机身",
-        assembly_time_days=Decimal("2"), production_sequence=1,
-        is_final_assembly=False,
-    ))
+    db_session.add(
+        AssemblyTimeBaseline(
+            machine_model="MC1-80",
+            assembly_name="机身",
+            assembly_time_days=Decimal("2"),
+            production_sequence=1,
+            is_final_assembly=False,
+        )
+    )
 
-    db_session.add(PartCycleBaseline(
-        material_no="PART_CAST", material_desc="铸件机身",
-        core_part_name="铸件", machine_model="MC1-80",
-        ref_batch_qty=Decimal("1"), cycle_days=Decimal("15"),
-        unit_cycle_days=Decimal("15"), is_active=True,
-    ))
-    db_session.add(PartCycleBaseline(
-        material_no="PART_PLATE", material_desc="机身板件",
-        core_part_name="板件", machine_model="MC1-80",
-        ref_batch_qty=Decimal("1"), cycle_days=Decimal("5"),
-        unit_cycle_days=Decimal("5"), is_active=True,
-    ))
+    db_session.add(
+        PartCycleBaseline(
+            material_no="PART_CAST",
+            material_desc="铸件机身",
+            core_part_name="铸件",
+            machine_model="MC1-80",
+            ref_batch_qty=Decimal("1"),
+            cycle_days=Decimal("15"),
+            unit_cycle_days=Decimal("15"),
+            is_active=True,
+        )
+    )
+    db_session.add(
+        PartCycleBaseline(
+            material_no="PART_PLATE",
+            material_desc="机身板件",
+            core_part_name="板件",
+            machine_model="MC1-80",
+            ref_batch_qty=Decimal("1"),
+            cycle_days=Decimal("5"),
+            unit_cycle_days=Decimal("5"),
+            is_active=True,
+        )
+    )
     await db_session.commit()
 
     service = PartScheduleService(db_session)
@@ -79,8 +117,8 @@ async def test_build_part_schedules(db_session):
     body_parts = [p for p in parts if p.assembly_name == "机身"]
     assert len(body_parts) == 2
 
-    key_part = [p for p in body_parts if p.is_key_part][0]
-    non_key_part = [p for p in body_parts if not p.is_key_part][0]
+    key_part = next(p for p in body_parts if p.is_key_part)
+    non_key_part = next(p for p in body_parts if not p.is_key_part)
 
     assert key_part.part_material_no == "PART_CAST"
     assert key_part.part_cycle_days == Decimal("15")
@@ -106,9 +144,12 @@ async def test_build_part_schedules(db_session):
 @pytest.mark.asyncio
 async def test_build_part_schedules_uses_prefetched_children_and_key_part(monkeypatch, db_session):
     order = SalesPlanOrderLineSrc(
-        sap_code="SAP002", sap_line_no="10",
-        product_model="MC1-80", product_series="MC1",
-        material_no="MACH002", quantity=Decimal("1"),
+        sap_code="SAP002",
+        sap_line_no="10",
+        product_model="MC1-80",
+        product_series="MC1",
+        material_no="MACH002",
+        quantity=Decimal("1"),
         confirmed_delivery_date=datetime(2026, 6, 30),
         drawing_released=True,
     )
@@ -125,29 +166,52 @@ async def test_build_part_schedules_uses_prefetched_children_and_key_part(monkey
     )
     db_session.add(msr)
 
-    db_session.add(BomRelationSrc(
-        machine_material_no="MACH002", plant="1000",
-        material_no="MACH002", bom_component_no="ASM_BODY",
-        bom_component_desc="机身MC1-80", bom_level=1,
-        is_top_level=True, is_self_made=True, part_type="自制件",
-    ))
-    db_session.add(BomRelationSrc(
-        machine_material_no="MACH002", plant="1000",
-        material_no="ASM_BODY", bom_component_no="PART_CAST",
-        bom_component_desc="铸件机身", bom_level=2,
-        is_self_made=True, part_type="自制件",
-    ))
-    db_session.add(AssemblyTimeBaseline(
-        machine_model="MC1-80", assembly_name="机身",
-        assembly_time_days=Decimal("2"), production_sequence=1,
-        is_final_assembly=False,
-    ))
-    db_session.add(PartCycleBaseline(
-        material_no="PART_CAST", material_desc="铸件机身",
-        core_part_name="铸件", machine_model="MC1-80",
-        ref_batch_qty=Decimal("1"), cycle_days=Decimal("15"),
-        unit_cycle_days=Decimal("15"), is_active=True,
-    ))
+    db_session.add(
+        BomRelationSrc(
+            machine_material_no="MACH002",
+            plant="1000",
+            material_no="MACH002",
+            bom_component_no="ASM_BODY",
+            bom_component_desc="机身MC1-80",
+            bom_level=1,
+            is_top_level=True,
+            is_self_made=True,
+            part_type="自制件",
+        )
+    )
+    db_session.add(
+        BomRelationSrc(
+            machine_material_no="MACH002",
+            plant="1000",
+            material_no="ASM_BODY",
+            bom_component_no="PART_CAST",
+            bom_component_desc="铸件机身",
+            bom_level=2,
+            is_self_made=True,
+            part_type="自制件",
+        )
+    )
+    db_session.add(
+        AssemblyTimeBaseline(
+            machine_model="MC1-80",
+            assembly_name="机身",
+            assembly_time_days=Decimal("2"),
+            production_sequence=1,
+            is_final_assembly=False,
+        )
+    )
+    db_session.add(
+        PartCycleBaseline(
+            material_no="PART_CAST",
+            material_desc="铸件机身",
+            core_part_name="铸件",
+            machine_model="MC1-80",
+            ref_batch_qty=Decimal("1"),
+            cycle_days=Decimal("15"),
+            unit_cycle_days=Decimal("15"),
+            is_active=True,
+        )
+    )
     await db_session.commit()
 
     service = PartScheduleService(db_session)
@@ -171,9 +235,12 @@ async def test_build_part_schedules_uses_prefetched_children_and_key_part(monkey
 @pytest.mark.asyncio
 async def test_build_part_schedules_recursively_collects_all_self_made_nodes(db_session):
     order = SalesPlanOrderLineSrc(
-        sap_code="SAP003", sap_line_no="10",
-        product_model="MC1-80", product_series="MC1",
-        material_no="MACH003", quantity=Decimal("1"),
+        sap_code="SAP003",
+        sap_line_no="10",
+        product_model="MC1-80",
+        product_series="MC1",
+        material_no="MACH003",
+        quantity=Decimal("1"),
         confirmed_delivery_date=datetime(2026, 6, 30),
         drawing_released=True,
     )
@@ -190,49 +257,82 @@ async def test_build_part_schedules_recursively_collects_all_self_made_nodes(db_
     )
     db_session.add(msr)
 
-    db_session.add_all([
-        BomRelationSrc(
-            machine_material_no="MACH003", plant="1000",
-            material_no="MACH003", bom_component_no="ASM_BODY",
-            bom_component_desc="机身MC1-80", bom_level=1,
-            is_top_level=True, is_self_made=True, part_type="自制件",
-        ),
-        BomRelationSrc(
-            machine_material_no="MACH003", plant="1000",
-            material_no="ASM_BODY", bom_component_no="SUB_LEFT",
-            bom_component_desc="左子总成", bom_level=2,
-            is_self_made=True, part_type="自制件",
-        ),
-        BomRelationSrc(
-            machine_material_no="MACH003", plant="1000",
-            material_no="ASM_BODY", bom_component_no="SUB_RIGHT",
-            bom_component_desc="右子总成", bom_level=2,
-            is_self_made=True, part_type="自制件",
-        ),
-        BomRelationSrc(
-            machine_material_no="MACH003", plant="1000",
-            material_no="SUB_LEFT", bom_component_no="PART_SHARED",
-            bom_component_desc="共享件", bom_level=3,
-            is_self_made=True, part_type="自制件",
-        ),
-        BomRelationSrc(
-            machine_material_no="MACH003", plant="1000",
-            material_no="SUB_RIGHT", bom_component_no="PART_SHARED",
-            bom_component_desc="共享件", bom_level=3,
-            is_self_made=True, part_type="自制件",
-        ),
-    ])
-    db_session.add(AssemblyTimeBaseline(
-        machine_model="MC1-80", assembly_name="机身",
-        assembly_time_days=Decimal("2"), production_sequence=1,
-        is_final_assembly=False,
-    ))
-    db_session.add(PartCycleBaseline(
-        material_no="PART_SHARED", material_desc="共享件",
-        core_part_name="共享件", machine_model="MC1-80",
-        ref_batch_qty=Decimal("1"), cycle_days=Decimal("12"),
-        unit_cycle_days=Decimal("12"), is_active=True,
-    ))
+    db_session.add_all(
+        [
+            BomRelationSrc(
+                machine_material_no="MACH003",
+                plant="1000",
+                material_no="MACH003",
+                bom_component_no="ASM_BODY",
+                bom_component_desc="机身MC1-80",
+                bom_level=1,
+                is_top_level=True,
+                is_self_made=True,
+                part_type="自制件",
+            ),
+            BomRelationSrc(
+                machine_material_no="MACH003",
+                plant="1000",
+                material_no="ASM_BODY",
+                bom_component_no="SUB_LEFT",
+                bom_component_desc="左子总成",
+                bom_level=2,
+                is_self_made=True,
+                part_type="自制件",
+            ),
+            BomRelationSrc(
+                machine_material_no="MACH003",
+                plant="1000",
+                material_no="ASM_BODY",
+                bom_component_no="SUB_RIGHT",
+                bom_component_desc="右子总成",
+                bom_level=2,
+                is_self_made=True,
+                part_type="自制件",
+            ),
+            BomRelationSrc(
+                machine_material_no="MACH003",
+                plant="1000",
+                material_no="SUB_LEFT",
+                bom_component_no="PART_SHARED",
+                bom_component_desc="共享件",
+                bom_level=3,
+                is_self_made=True,
+                part_type="自制件",
+            ),
+            BomRelationSrc(
+                machine_material_no="MACH003",
+                plant="1000",
+                material_no="SUB_RIGHT",
+                bom_component_no="PART_SHARED",
+                bom_component_desc="共享件",
+                bom_level=3,
+                is_self_made=True,
+                part_type="自制件",
+            ),
+        ]
+    )
+    db_session.add(
+        AssemblyTimeBaseline(
+            machine_model="MC1-80",
+            assembly_name="机身",
+            assembly_time_days=Decimal("2"),
+            production_sequence=1,
+            is_final_assembly=False,
+        )
+    )
+    db_session.add(
+        PartCycleBaseline(
+            material_no="PART_SHARED",
+            material_desc="共享件",
+            core_part_name="共享件",
+            machine_model="MC1-80",
+            ref_batch_qty=Decimal("1"),
+            cycle_days=Decimal("12"),
+            unit_cycle_days=Decimal("12"),
+            is_active=True,
+        )
+    )
     await db_session.commit()
 
     service = PartScheduleService(db_session)
@@ -259,16 +359,22 @@ async def test_build_part_schedules_recursively_collects_all_self_made_nodes(db_
 @pytest.mark.asyncio
 async def test_build_part_schedules_rejects_mismatched_machine_schedule_binding(db_session):
     order_a = SalesPlanOrderLineSrc(
-        sap_code="SAP004", sap_line_no="10",
-        product_model="MC1-80", product_series="MC1",
-        material_no="MACH004", quantity=Decimal("1"),
+        sap_code="SAP004",
+        sap_line_no="10",
+        product_model="MC1-80",
+        product_series="MC1",
+        material_no="MACH004",
+        quantity=Decimal("1"),
         confirmed_delivery_date=datetime(2026, 6, 30),
         drawing_released=True,
     )
     order_b = SalesPlanOrderLineSrc(
-        sap_code="SAP005", sap_line_no="10",
-        product_model="MC1-80", product_series="MC1",
-        material_no="MACH005", quantity=Decimal("1"),
+        sap_code="SAP005",
+        sap_line_no="10",
+        product_model="MC1-80",
+        product_series="MC1",
+        material_no="MACH005",
+        quantity=Decimal("1"),
         confirmed_delivery_date=datetime(2026, 6, 30),
         drawing_released=True,
     )

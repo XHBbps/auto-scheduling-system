@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Awaitable, Callable
 from datetime import datetime
-from typing import Awaitable, Callable
+from typing import Any
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -209,31 +210,28 @@ class ScheduleSnapshotRefreshRuntimeOrchestrator:
         source: str,
         reason: str,
     ) -> bool:
-        async with self.seed_lock:
-            async with session_factory() as session:
-                service = spawn_for_session(session)
-                async with session.begin():
-                    await self.acquire_seed_lock(session)
-                    if await service.snapshot_repo.exists_any():
-                        return False
+        async with self.seed_lock, session_factory() as session:
+            service = spawn_for_session(session)
+            async with session.begin():
+                await self.acquire_seed_lock(session)
+                if await service.snapshot_repo.exists_any():
+                    return False
 
-                    seeded = await service._fast_seed_all(source=source, reason=reason)
-                    if seeded > 0:
-                        logger.info(
-                            "Initial snapshot fast seed finished: rows=%s source=%s reason=%s",
-                            seeded,
-                            source,
-                            reason,
-                        )
-                        return True
-
-                    result = await service._refresh_all_known_order_line_ids_in_batches(
-                        source=source,
-                        reason=reason,
+                seeded = await service._fast_seed_all(source=source, reason=reason)
+                if seeded > 0:
+                    logger.info(
+                        "Initial snapshot fast seed finished: rows=%s source=%s reason=%s",
+                        seeded,
+                        source,
+                        reason,
                     )
-                    if result["total"] == 0:
-                        return False
                     return True
+
+                result = await service._refresh_all_known_order_line_ids_in_batches(
+                    source=source,
+                    reason=reason,
+                )
+                return result["total"] != 0
 
     async def acquire_seed_lock(self, session: AsyncSession) -> None:
         bind = session.bind

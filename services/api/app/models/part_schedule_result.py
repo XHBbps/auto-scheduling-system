@@ -1,7 +1,8 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, Any
-from sqlalchemy import String, Numeric, Boolean, Integer, Text, ForeignKey, Index
+from typing import Any
+
+from sqlalchemy import Boolean, ForeignKey, Index, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -12,38 +13,39 @@ class PartScheduleResult(TimestampMixin, Base):
     __tablename__ = "part_schedule_result"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    order_line_id: Mapped[int] = mapped_column(nullable=False)
-    machine_schedule_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("machine_schedule_result.id"))
+    order_line_id: Mapped[int] = mapped_column(
+        ForeignKey("sales_plan_order_line_src.id", ondelete="CASCADE"), nullable=False
+    )
+    machine_schedule_id: Mapped[int | None] = mapped_column(ForeignKey("machine_schedule_result.id"))
     assembly_name: Mapped[str] = mapped_column(String(100), nullable=False)
     production_sequence: Mapped[int] = mapped_column(Integer, nullable=False)
-    assembly_time_days: Mapped[Optional[Decimal]] = mapped_column(Numeric(18, 4))
+    assembly_time_days: Mapped[Decimal | None] = mapped_column(Numeric(18, 4))
     assembly_is_default: Mapped[bool] = mapped_column(Boolean, default=False)
-    parent_material_no: Mapped[Optional[str]] = mapped_column(String(100))
-    parent_name: Mapped[Optional[str]] = mapped_column(String(255))
-    node_level: Mapped[Optional[int]] = mapped_column(Integer)
-    bom_path: Mapped[Optional[str]] = mapped_column(Text)
-    bom_path_key: Mapped[Optional[str]] = mapped_column(String(500))
-    part_material_no: Mapped[Optional[str]] = mapped_column(String(100))
-    part_name: Mapped[Optional[str]] = mapped_column(String(255))
-    part_raw_material_desc: Mapped[Optional[str]] = mapped_column(String(255))
+    parent_material_no: Mapped[str | None] = mapped_column(String(100))
+    parent_name: Mapped[str | None] = mapped_column(String(255))
+    node_level: Mapped[int | None] = mapped_column(Integer)
+    bom_path: Mapped[str | None] = mapped_column(Text)
+    bom_path_key: Mapped[str | None] = mapped_column(String(500))
+    part_material_no: Mapped[str | None] = mapped_column(String(100))
+    part_name: Mapped[str | None] = mapped_column(String(255))
+    part_raw_material_desc: Mapped[str | None] = mapped_column(String(255))
     is_key_part: Mapped[bool] = mapped_column(Boolean, default=False)
-    part_cycle_days: Mapped[Optional[Decimal]] = mapped_column(Numeric(18, 4))
+    part_cycle_days: Mapped[Decimal | None] = mapped_column(Numeric(18, 4))
     part_cycle_is_default: Mapped[bool] = mapped_column(Boolean, default=False)
-    part_cycle_match_rule: Mapped[Optional[str]] = mapped_column(String(100))
-    key_part_material_no: Mapped[Optional[str]] = mapped_column(String(100))
-    key_part_name: Mapped[Optional[str]] = mapped_column(String(255))
-    key_part_raw_material_desc: Mapped[Optional[str]] = mapped_column(String(255))
-    key_part_cycle_days: Mapped[Optional[Decimal]] = mapped_column(Numeric(18, 4))
+    part_cycle_match_rule: Mapped[str | None] = mapped_column(String(100))
+    key_part_material_no: Mapped[str | None] = mapped_column(String(100))
+    key_part_name: Mapped[str | None] = mapped_column(String(255))
+    key_part_raw_material_desc: Mapped[str | None] = mapped_column(String(255))
+    key_part_cycle_days: Mapped[Decimal | None] = mapped_column(Numeric(18, 4))
     key_part_is_default: Mapped[bool] = mapped_column(Boolean, default=False)
-    cycle_match_rule: Mapped[Optional[str]] = mapped_column(String(100))
-    planned_start_date: Mapped[Optional[datetime]] = mapped_column()
-    planned_end_date: Mapped[Optional[datetime]] = mapped_column()
-    warning_level: Mapped[Optional[str]] = mapped_column(String(50))
-    default_flags: Mapped[Optional[dict[str, Any]]] = mapped_column(JSONB)
-    issue_flags: Mapped[Optional[dict[str, Any]]] = mapped_column(JSONB)
-    run_batch_no: Mapped[Optional[str]] = mapped_column(String(100))
-    remark: Mapped[Optional[str]] = mapped_column(Text)
+    cycle_match_rule: Mapped[str | None] = mapped_column(String(100))
+    planned_start_date: Mapped[datetime | None] = mapped_column()
+    planned_end_date: Mapped[datetime | None] = mapped_column()
+    warning_level: Mapped[str | None] = mapped_column(String(50))
+    default_flags: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    issue_flags: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    run_batch_no: Mapped[str | None] = mapped_column(String(100))
+    remark: Mapped[str | None] = mapped_column(Text)
 
     __table_args__ = (
         Index("idx_psr_order_line_id", "order_line_id"),

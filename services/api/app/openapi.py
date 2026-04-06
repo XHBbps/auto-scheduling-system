@@ -6,7 +6,6 @@ from fastapi.openapi.utils import get_openapi
 from app.common.auth import AUTH_SESSION_SECURITY_SCHEME_NAME
 from app.config import settings
 
-
 OPENAPI_TAGS = [
     {"name": "排产查询", "description": "排产总览、整机排产列表、零件排产列表和订单排产详情查询接口。"},
     {"name": "异常查询", "description": "异常列表与异常筛选项查询接口。"},
@@ -354,14 +353,10 @@ OPENAPI_VALIDATION_ERROR_EXAMPLE = {
 }
 
 
-OPENAPI_AUTH_ERROR_EXAMPLE = {
-    "detail": "User session is invalid or expired."
-}
+OPENAPI_AUTH_ERROR_EXAMPLE = {"detail": "User session is invalid or expired."}
 
 
-OPENAPI_FORBIDDEN_ERROR_EXAMPLE = {
-    "detail": "Current user does not have the required permission."
-}
+OPENAPI_FORBIDDEN_ERROR_EXAMPLE = {"detail": "Current user does not have the required permission."}
 
 
 def _apply_openapi_descriptions(schema: dict) -> None:
@@ -370,8 +365,7 @@ def _apply_openapi_descriptions(schema: dict) -> None:
 
     if AUTH_SESSION_SECURITY_SCHEME_NAME in security_schemes:
         security_schemes[AUTH_SESSION_SECURITY_SCHEME_NAME]["description"] = (
-            f"用户登录成功后写入浏览器的会话 Cookie。"
-            f"调用受保护接口时请携带 `{settings.user_session_cookie_name}`。"
+            f"用户登录成功后写入浏览器的会话 Cookie。调用受保护接口时请携带 `{settings.user_session_cookie_name}`。"
         )
 
     for schema_name, schema_item in components.items():
@@ -414,7 +408,9 @@ def _apply_openapi_descriptions(schema: dict) -> None:
                     schema_name = ref.rsplit("/", 1)[-1]
                     schema_description = components.get(schema_name, {}).get("description")
                     if schema_description:
-                        request_body["description"] = f"{schema_description.rstrip('。')}。各字段中文说明见下方 Schema 区域。"
+                        request_body["description"] = (
+                            f"{schema_description.rstrip('。')}。各字段中文说明见下方 Schema 区域。"
+                        )
                         break
 
             _apply_response_descriptions_and_examples(
@@ -501,9 +497,7 @@ def _apply_response_descriptions_and_examples(
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
                     "schema": {"type": "string", "format": "binary"}
                 },
-                "text/csv": {
-                    "schema": {"type": "string", "format": "binary"}
-                },
+                "text/csv": {"schema": {"type": "string", "format": "binary"}},
             }
             continue
 
@@ -573,7 +567,7 @@ def _build_operation_io_sections(
     sections: list[str] = []
     security_lines: list[str] = []
     for security_item in operation.get("security") or []:
-        for scheme_name in security_item.keys():
+        for scheme_name in security_item:
             scheme = security_schemes.get(scheme_name, {})
             if not scheme:
                 continue

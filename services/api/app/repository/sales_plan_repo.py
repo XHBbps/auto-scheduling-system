@@ -1,5 +1,7 @@
-from typing import Any, Sequence
-from sqlalchemy import select, func, and_
+from collections.abc import Sequence
+from typing import Any
+
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.sales_plan import SalesPlanOrderLineSrc
@@ -10,9 +12,7 @@ class SalesPlanRepo(BaseRepository[SalesPlanOrderLineSrc]):
     def __init__(self, session: AsyncSession):
         super().__init__(session, SalesPlanOrderLineSrc)
 
-    async def upsert_by_sap_key(
-        self, sap_code: str, sap_line_no: str, data: dict[str, Any]
-    ) -> SalesPlanOrderLineSrc:
+    async def upsert_by_sap_key(self, sap_code: str, sap_line_no: str, data: dict[str, Any]) -> SalesPlanOrderLineSrc:
         stmt = select(SalesPlanOrderLineSrc).where(
             and_(
                 SalesPlanOrderLineSrc.sap_code == sap_code,
@@ -30,9 +30,7 @@ class SalesPlanRepo(BaseRepository[SalesPlanOrderLineSrc]):
         return await self.add(entity)
 
     async def find_by_detail_id(self, detail_id: str) -> SalesPlanOrderLineSrc | None:
-        stmt = select(SalesPlanOrderLineSrc).where(
-            SalesPlanOrderLineSrc.detail_id == detail_id
-        )
+        stmt = select(SalesPlanOrderLineSrc).where(SalesPlanOrderLineSrc.detail_id == detail_id)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 

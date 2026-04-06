@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
-from typing import Any, Awaitable, Callable, Sequence
+from collections.abc import Awaitable, Callable, Iterable, Sequence
+from typing import Any
 
 from app.common.enums import ScheduleStatus
 from app.models.data_issue import DataIssueRecord

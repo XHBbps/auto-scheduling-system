@@ -1,6 +1,6 @@
 from datetime import datetime
-from typing import Optional
-from sqlalchemy import Index, Integer, String, Text
+
+from sqlalchemy import ForeignKey, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, validates
 
 from app.models.base import Base, TimestampMixin
@@ -11,16 +11,16 @@ class DataIssueRecord(TimestampMixin, Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     issue_type: Mapped[str] = mapped_column(String(50), nullable=False)
-    issue_level: Mapped[Optional[str]] = mapped_column(String(50))
-    source_system: Mapped[Optional[str]] = mapped_column(String(50))
-    biz_key: Mapped[Optional[str]] = mapped_column(String(200))
-    order_line_id: Mapped[Optional[int]] = mapped_column(Integer)
+    issue_level: Mapped[str | None] = mapped_column(String(50))
+    source_system: Mapped[str | None] = mapped_column(String(50))
+    biz_key: Mapped[str | None] = mapped_column(String(200))
+    order_line_id: Mapped[int | None] = mapped_column(ForeignKey("sales_plan_order_line_src.id", ondelete="SET NULL"))
     issue_title: Mapped[str] = mapped_column(String(255), nullable=False)
-    issue_detail: Mapped[Optional[str]] = mapped_column(Text)
+    issue_detail: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="open")
-    handler: Mapped[Optional[str]] = mapped_column(String(100))
-    handled_at: Mapped[Optional[datetime]] = mapped_column()
-    remark: Mapped[Optional[str]] = mapped_column(Text)
+    handler: Mapped[str | None] = mapped_column(String(100))
+    handled_at: Mapped[datetime | None] = mapped_column()
+    remark: Mapped[str | None] = mapped_column(Text)
 
     __table_args__ = (
         Index("idx_issue_type", "issue_type"),

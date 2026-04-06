@@ -1,4 +1,3 @@
-
 import logging
 
 from fastapi import APIRouter, Depends, Query
@@ -10,6 +9,7 @@ from app.common.exceptions import BizException, ErrorCode
 from app.common.response import ApiResponse
 from app.database import get_session
 from app.repository.order_schedule_snapshot_repo import OrderScheduleSnapshotRepo
+from app.scheduler.schedule_orchestrator import ScheduleOrchestrator
 from app.schemas.admin_schemas import (
     ScheduleRunRequest,
     ScheduleRunResponse,
@@ -18,7 +18,6 @@ from app.schemas.admin_schemas import (
     SnapshotObservabilityResponse,
     SnapshotRefreshResult,
 )
-from app.scheduler.schedule_orchestrator import ScheduleOrchestrator
 from app.services.schedule_snapshot_refresh_service import ScheduleSnapshotRefreshService
 
 logger = logging.getLogger(__name__)
@@ -60,29 +59,33 @@ async def run_schedule(
         if not order_line_ids:
             order_line_ids = await _find_schedulable_order_line_ids(session)
             if not order_line_ids:
-                return ApiResponse.ok(data={
-                    "run_batch_no": None,
-                    "total": 0,
-                    "success_count": 0,
-                    "fail_count": 0,
-                    "message": "当前没有可排产订单",
-                })
+                return ApiResponse.ok(
+                    data={
+                        "run_batch_no": None,
+                        "total": 0,
+                        "success_count": 0,
+                        "fail_count": 0,
+                        "message": "当前没有可排产订单",
+                    }
+                )
 
         orchestrator = ScheduleOrchestrator(session)
         batch_result = await orchestrator.schedule_batch(order_line_ids)
         await session.commit()
         run_batch_no = f"SCH{utc_now().strftime('%Y%m%d%H%M%S')}"
-        return ApiResponse.ok(data={
-            "run_batch_no": run_batch_no,
-            "total": batch_result["total"],
-            "success_count": batch_result["scheduled"],
-            "fail_count": batch_result["failed"],
-        })
+        return ApiResponse.ok(
+            data={
+                "run_batch_no": run_batch_no,
+                "total": batch_result["total"],
+                "success_count": batch_result["scheduled"],
+                "fail_count": batch_result["failed"],
+            }
+        )
     except BizException:
         raise
     except Exception as exc:
         logger.error("Schedule run failed: %s", exc, exc_info=True)
-        raise BizException(ErrorCode.SCHEDULE_CALC_FAILED, "排产执行失败，请稍后重试或联系管理员")
+        raise BizException(ErrorCode.SCHEDULE_CALC_FAILED, "排产执行失败，请稍后重试或联系管理员") from exc
 
 
 @router.post(
@@ -108,35 +111,39 @@ async def run_one_part_schedule(
         async with session.begin_nested():
             result = await orchestrator.schedule_order(req.order_line_id)
             if not result.get("success"):
-                raise _SingleOrderScheduleAbort({
-                    "order_line_id": req.order_line_id,
-                    "success": False,
-                    "precheck_passed": True,
-                    "status": result.get("status", "schedule_failed"),
-                    "message": result.get("reason", "排产执行失败。"),
-                    "validation_items": [],
-                    "machine_schedule_built": False,
-                    "part_schedule_built": False,
-                })
+                raise _SingleOrderScheduleAbort(
+                    {
+                        "order_line_id": req.order_line_id,
+                        "success": False,
+                        "precheck_passed": True,
+                        "status": result.get("status", "schedule_failed"),
+                        "message": result.get("reason", "排产执行失败。"),
+                        "validation_items": [],
+                        "machine_schedule_built": False,
+                        "part_schedule_built": False,
+                    }
+                )
 
             part_schedules = result.get("part_schedules") or []
             if not part_schedules:
-                raise _SingleOrderScheduleAbort({
-                    "order_line_id": req.order_line_id,
-                    "success": False,
-                    "precheck_passed": True,
-                    "status": "part_schedule_empty",
-                    "message": "排产未生成任何结果，请检查零件/BOM 数据。",
-                    "validation_items": [
-                        ScheduleOrchestrator._build_validation_item(
-                            code="part_schedule_empty",
-                            label="零件数据",
-                            message="执行后未生成排产结果，请检查部装和零件数据。",
-                        )
-                    ],
-                    "machine_schedule_built": False,
-                    "part_schedule_built": False,
-                })
+                raise _SingleOrderScheduleAbort(
+                    {
+                        "order_line_id": req.order_line_id,
+                        "success": False,
+                        "precheck_passed": True,
+                        "status": "part_schedule_empty",
+                        "message": "排产未生成任何结果，请检查零件/BOM 数据。",
+                        "validation_items": [
+                            ScheduleOrchestrator._build_validation_item(
+                                code="part_schedule_empty",
+                                label="零件数据",
+                                message="执行后未生成排产结果，请检查部装和零件数据。",
+                            )
+                        ],
+                        "machine_schedule_built": False,
+                        "part_schedule_built": False,
+                    }
+                )
 
             warning_items = orchestrator.collect_schedule_warning_items(
                 result["machine_schedule"],
@@ -162,7 +169,7 @@ async def run_one_part_schedule(
         raise
     except Exception as exc:
         logger.error("Single order part schedule run failed: %s", exc, exc_info=True)
-        raise BizException(ErrorCode.SCHEDULE_CALC_FAILED, "单订单排产执行失败，请稍后重试或联系管理员")
+        raise BizException(ErrorCode.SCHEDULE_CALC_FAILED, "单订单排产执行失败，请稍后重试或联系管理员") from exc
 
 
 @router.post(

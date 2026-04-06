@@ -109,7 +109,9 @@ class ManualSyncTaskService:
                 "source_system": "system",
                 "message": message,
                 "operator_name": operator_name,
-            } if source == "manual_api" else None,
+            }
+            if source == "manual_api"
+            else None,
         )
         await session.commit()
         identifier = job.id if job is not None else task.id

@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import AsyncMock
+
+import pytest
 
 from app.config import settings
 from app.sync.auto_bom_backfill_service import AutoBomBackfillResult
@@ -23,10 +24,10 @@ async def test_sync_sales_plan_triggers_auto_bom_for_touched_and_drawing_updated
         def get_touched_order_line_ids(self):
             return [5, 6]
 
-    auto_bom_mock = AsyncMock(
-        return_value=AutoBomBackfillResult(candidate_orders=3, candidate_items=2, created=True)
+    auto_bom_mock = AsyncMock(return_value=AutoBomBackfillResult(candidate_orders=3, candidate_items=2, created=True))
+    refresh_batch_mock = AsyncMock(
+        return_value={"total": 1, "refreshed": 1, "scheduled": 0, "scheduled_stale": 0, "deleted": 0}
     )
-    refresh_batch_mock = AsyncMock(return_value={"total": 1, "refreshed": 1, "scheduled": 0, "scheduled_stale": 0, "deleted": 0})
 
     monkeypatch.setattr("app.sync.sync_workflow_service.SalesPlanSyncService", _FakeSalesPlanSyncService)
     monkeypatch.setattr(settings, "sap_bom_base_url", "https://sap.example.com")

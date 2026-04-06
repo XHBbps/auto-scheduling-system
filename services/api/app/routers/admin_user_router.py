@@ -18,8 +18,8 @@ from app.repository.role_repo import RoleRepo
 from app.repository.user_account_repo import UserAccountRepo
 from app.repository.user_session_repo import UserSessionRepo
 from app.schemas.auth_schemas import (
-    AdminPermissionListResponse,
     AdminPermissionLinkageResponse,
+    AdminPermissionListResponse,
     AdminPermissionMatrixResponse,
     AdminRoleDetailResponse,
     AdminRoleItemResponse,
@@ -29,8 +29,8 @@ from app.schemas.auth_schemas import (
     AdminUserItemResponse,
     AdminUserListPageResponse,
     RoleCreateRequest,
-    RoleStatusUpdateRequest,
     RolePermissionUpdateRequest,
+    RoleStatusUpdateRequest,
     RoleUpdateRequest,
     UserCreateRequest,
     UserPasswordResetRequest,
@@ -64,7 +64,9 @@ def _serialize_admin_user_item(user: UserAccount) -> dict[str, object]:
     return payload
 
 
-def _serialize_role_detail(role: Role, *, assigned_user_count: int = 0, permission_count: int | None = None) -> dict[str, object]:
+def _serialize_role_detail(
+    role: Role, *, assigned_user_count: int = 0, permission_count: int | None = None
+) -> dict[str, object]:
     payload = serialize_role_payload(role, assigned_user_count=assigned_user_count, permission_count=permission_count)
     payload["permissions"] = [
         serialize_permission_payload(link.permission)
@@ -595,9 +597,7 @@ async def get_permission_matrix(
     permission_counts = await role_repo.count_permissions(role_ids)
     role_permission_codes = {
         role.id: {
-            link.permission.code
-            for link in role.permission_links
-            if getattr(link, "permission", None) is not None
+            link.permission.code for link in role.permission_links if getattr(link, "permission", None) is not None
         }
         for role in roles
     }

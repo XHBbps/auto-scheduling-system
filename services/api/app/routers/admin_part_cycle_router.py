@@ -1,5 +1,4 @@
-﻿from decimal import Decimal
-from typing import Optional
+from decimal import Decimal
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import and_, or_, select
@@ -8,8 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.auth import CurrentUserIdentity, require_permission
 from app.common.datetime_utils import utc_now
-from app.common.part_cycle_precision import normalize_part_cycle_days, normalize_part_unit_cycle_days
 from app.common.exceptions import ErrorCode
+from app.common.part_cycle_precision import normalize_part_cycle_days, normalize_part_unit_cycle_days
 from app.common.response import ApiResponse
 from app.common.text_parse_utils import extract_part_type
 from app.database import get_session
@@ -83,12 +82,12 @@ def _serialize_part_cycle_baseline(item: PartCycleBaseline) -> dict:
     response_model=ApiResponse[list[PartCycleBaselineItemResponse]],
 )
 async def list_part_cycle_baselines(
-    part_type: Optional[str] = None,
-    material_no: Optional[str] = None,
-    core_part_name: Optional[str] = None,
-    machine_model: Optional[str] = None,
-    plant: Optional[str] = None,
-    is_active: Optional[bool] = None,
+    part_type: str | None = None,
+    material_no: str | None = None,
+    core_part_name: str | None = None,
+    machine_model: str | None = None,
+    plant: str | None = None,
+    is_active: bool | None = None,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_settings_manage_permission),
 ):
@@ -183,7 +182,9 @@ async def save_part_cycle_baseline(
         return ApiResponse.ok(data={"id": entity.id, "part_type": part_type, "material_no": entity.material_no})
     except IntegrityError:
         await session.rollback()
-        return ApiResponse.fail(code=ErrorCode.BIZ_VALIDATION_FAILED, message="相同零件类型 / 机型 / 工厂的基准记录已存在")
+        return ApiResponse.fail(
+            code=ErrorCode.BIZ_VALIDATION_FAILED, message="相同零件类型 / 机型 / 工厂的基准记录已存在"
+        )
 
 
 @router.post(

@@ -1,4 +1,5 @@
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 from sqlalchemy import and_, delete, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -61,11 +62,7 @@ class DataIssueRepo(BaseRepository[DataIssueRecord]):
         *,
         match_conditions: list[Any],
     ) -> DataIssueRecord | None:
-        stmt = (
-            select(DataIssueRecord)
-            .where(and_(*match_conditions))
-            .order_by(desc(DataIssueRecord.id))
-        )
+        stmt = select(DataIssueRecord).where(and_(*match_conditions)).order_by(desc(DataIssueRecord.id))
         matches = (await self.session.execute(stmt)).scalars().all()
         if not matches:
             return None
@@ -87,15 +84,15 @@ class DataIssueRepo(BaseRepository[DataIssueRecord]):
         count_base = select(func.count()).select_from(DataIssueRecord)
 
         conditions = []
-        if "status" in filters and filters["status"]:
+        if filters.get("status"):
             conditions.append(DataIssueRecord.status == filters["status"])
-        if "issue_type" in filters and filters["issue_type"]:
+        if filters.get("issue_type"):
             conditions.append(DataIssueRecord.issue_type == filters["issue_type"])
-        if "biz_key" in filters and filters["biz_key"]:
+        if filters.get("biz_key"):
             conditions.append(DataIssueRecord.biz_key == filters["biz_key"])
         if "order_line_id" in filters and filters["order_line_id"] is not None:
             conditions.append(DataIssueRecord.order_line_id == filters["order_line_id"])
-        if "source_system" in filters and filters["source_system"]:
+        if filters.get("source_system"):
             conditions.append(DataIssueRecord.source_system == filters["source_system"])
 
         if conditions:
@@ -117,12 +114,16 @@ class DataIssueRepo(BaseRepository[DataIssueRecord]):
                 "created_at": DataIssueRecord.created_at,
             },
         )
-        stmt = base.order_by(
-            *resolve_order_by(
-                sort_expression=sort_expression,
-                default_order_by=[DataIssueRecord.id.desc()],
+        stmt = (
+            base.order_by(
+                *resolve_order_by(
+                    sort_expression=sort_expression,
+                    default_order_by=[DataIssueRecord.id.desc()],
+                )
             )
-        ).offset((page_no - 1) * page_size).limit(page_size)
+            .offset((page_no - 1) * page_size)
+            .limit(page_size)
+        )
         items = (await self.session.execute(stmt)).scalars().all()
         return items, total
 
@@ -131,25 +132,22 @@ class DataIssueRepo(BaseRepository[DataIssueRecord]):
     ) -> tuple[Sequence[tuple[DataIssueRecord, OrderScheduleSnapshot | None]], int]:
         sort_field = filters.pop("sort_field", None)
         sort_order = filters.pop("sort_order", None)
-        base = (
-            select(DataIssueRecord, OrderScheduleSnapshot)
-            .outerjoin(
-                OrderScheduleSnapshot,
-                OrderScheduleSnapshot.order_line_id == DataIssueRecord.order_line_id,
-            )
+        base = select(DataIssueRecord, OrderScheduleSnapshot).outerjoin(
+            OrderScheduleSnapshot,
+            OrderScheduleSnapshot.order_line_id == DataIssueRecord.order_line_id,
         )
         count_base = select(func.count()).select_from(DataIssueRecord)
 
         conditions = []
-        if "status" in filters and filters["status"]:
+        if filters.get("status"):
             conditions.append(DataIssueRecord.status == filters["status"])
-        if "issue_type" in filters and filters["issue_type"]:
+        if filters.get("issue_type"):
             conditions.append(DataIssueRecord.issue_type == filters["issue_type"])
-        if "biz_key" in filters and filters["biz_key"]:
+        if filters.get("biz_key"):
             conditions.append(DataIssueRecord.biz_key == filters["biz_key"])
         if "order_line_id" in filters and filters["order_line_id"] is not None:
             conditions.append(DataIssueRecord.order_line_id == filters["order_line_id"])
-        if "source_system" in filters and filters["source_system"]:
+        if filters.get("source_system"):
             conditions.append(DataIssueRecord.source_system == filters["source_system"])
 
         if conditions:
@@ -172,12 +170,16 @@ class DataIssueRepo(BaseRepository[DataIssueRecord]):
                 "created_at": DataIssueRecord.created_at,
             },
         )
-        stmt = base.order_by(
-            *resolve_order_by(
-                sort_expression=sort_expression,
-                default_order_by=[DataIssueRecord.id.desc()],
+        stmt = (
+            base.order_by(
+                *resolve_order_by(
+                    sort_expression=sort_expression,
+                    default_order_by=[DataIssueRecord.id.desc()],
+                )
             )
-        ).offset((page_no - 1) * page_size).limit(page_size)
+            .offset((page_no - 1) * page_size)
+            .limit(page_size)
+        )
         items = (await self.session.execute(stmt)).all()
         return items, total
 
@@ -235,12 +237,16 @@ class DataIssueRepo(BaseRepository[DataIssueRecord]):
     ) -> Sequence[DataIssueRecord]:
         if not order_line_ids:
             return []
-        stmt = select(DataIssueRecord).where(
-            and_(
-                DataIssueRecord.status == "open",
-                DataIssueRecord.order_line_id.in_(order_line_ids),
+        stmt = (
+            select(DataIssueRecord)
+            .where(
+                and_(
+                    DataIssueRecord.status == "open",
+                    DataIssueRecord.order_line_id.in_(order_line_ids),
+                )
             )
-        ).order_by(DataIssueRecord.id.desc())
+            .order_by(DataIssueRecord.id.desc())
+        )
         result = await self.session.execute(stmt)
         return result.scalars().all()
 

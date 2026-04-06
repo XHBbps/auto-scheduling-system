@@ -1,16 +1,20 @@
-import pytest
 from datetime import date
+
+import pytest
+
 from app.models import WorkCalendar
 from app.repository.work_calendar_repo import WorkCalendarRepo
 
 
 @pytest.mark.asyncio
 async def test_get_calendar_map(db_session):
-    db_session.add_all([
-        WorkCalendar(calendar_date=date(2026, 4, 1), is_workday=True),
-        WorkCalendar(calendar_date=date(2026, 4, 4), is_workday=False, remark="Sat"),
-        WorkCalendar(calendar_date=date(2026, 4, 5), is_workday=True, remark="调休"),
-    ])
+    db_session.add_all(
+        [
+            WorkCalendar(calendar_date=date(2026, 4, 1), is_workday=True),
+            WorkCalendar(calendar_date=date(2026, 4, 4), is_workday=False, remark="Sat"),
+            WorkCalendar(calendar_date=date(2026, 4, 5), is_workday=True, remark="调休"),
+        ]
+    )
     await db_session.commit()
 
     repo = WorkCalendarRepo(db_session)
@@ -39,11 +43,13 @@ async def test_upsert_calendar(db_session):
 
 @pytest.mark.asyncio
 async def test_get_month(db_session):
-    db_session.add_all([
-        WorkCalendar(calendar_date=date(2026, 3, 1), is_workday=True),
-        WorkCalendar(calendar_date=date(2026, 3, 15), is_workday=True),
-        WorkCalendar(calendar_date=date(2026, 4, 1), is_workday=True),
-    ])
+    db_session.add_all(
+        [
+            WorkCalendar(calendar_date=date(2026, 3, 1), is_workday=True),
+            WorkCalendar(calendar_date=date(2026, 3, 15), is_workday=True),
+            WorkCalendar(calendar_date=date(2026, 4, 1), is_workday=True),
+        ]
+    )
     await db_session.commit()
 
     repo = WorkCalendarRepo(db_session)

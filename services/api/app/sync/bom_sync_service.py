@@ -1,7 +1,6 @@
 import logging
 from collections import deque
 from dataclasses import dataclass
-from datetime import datetime
 from typing import Any
 
 import httpx
@@ -23,9 +22,7 @@ from app.sync.sync_support_utils import SyncResult, finish_sync_job, start_sync_
 logger = logging.getLogger(__name__)
 
 
-def _compute_bom_levels(
-    rows: list[dict[str, Any]], machine_material_no: str
-) -> list[dict[str, Any]]:
+def _compute_bom_levels(rows: list[dict[str, Any]], machine_material_no: str) -> list[dict[str, Any]]:
     children_of: dict[str, list[dict[str, Any]]] = {}
     for row in rows:
         parent = (row.get("material_no") or "").strip()
@@ -126,29 +123,47 @@ class BomSyncService:
                 error_message=f"SAP BOM returned empty result for {machine_material_no}/{plant}",
             )
 
-        await self.repo.delete_by_machine_and_plant(machine_material_no, plant)
+        # Use savepoint so that if insert fails, the delete is rolled back
+        # and existing BOM data is preserved.
+        try:
+            async with self.session.begin_nested():
+                await self.repo.delete_by_machine_and_plant(machine_material_no, plant)
 
-        entities = []
-        for row in rows_with_levels:
-            entities.append(
-                BomRelationSrc(
-                    machine_material_no=row["machine_material_no"],
-                    machine_material_desc=row.get("machine_material_desc"),
-                    plant=row.get("plant"),
-                    material_no=row.get("material_no"),
-                    bom_component_no=row["bom_component_no"],
-                    bom_component_desc=row.get("bom_component_desc"),
-                    part_type=row.get("part_type"),
-                    component_qty=row.get("component_qty"),
-                    bom_level=row.get("bom_level", 1),
-                    is_top_level=row.get("is_top_level", False),
-                    is_self_made=row.get("is_self_made", False),
-                    sync_time=utc_now(),
-                )
+                entities = []
+                for row in rows_with_levels:
+                    entities.append(
+                        BomRelationSrc(
+                            machine_material_no=row["machine_material_no"],
+                            machine_material_desc=row.get("machine_material_desc"),
+                            plant=row.get("plant"),
+                            material_no=row.get("material_no"),
+                            bom_component_no=row["bom_component_no"],
+                            bom_component_desc=row.get("bom_component_desc"),
+                            part_type=row.get("part_type"),
+                            component_qty=row.get("component_qty"),
+                            bom_level=row.get("bom_level", 1),
+                            is_top_level=row.get("is_top_level", False),
+                            is_self_made=row.get("is_self_made", False),
+                            sync_time=utc_now(),
+                        )
+                    )
+
+                if entities:
+                    await self.repo.add_all(entities)
+        except Exception as exc:
+            logger.error(
+                "BOM replace failed for %s/%s, rolled back delete: %s",
+                machine_material_no,
+                plant,
+                exc,
             )
-
-        if entities:
-            await self.repo.add_all(entities)
+            return BomSyncExecutionResult(
+                machine_material_no=machine_material_no,
+                plant=plant,
+                success=False,
+                error_kind="replace_failed",
+                error_message=f"BOM delete+insert rolled back: {exc}",
+            )
 
         await self.snapshot_refresh_service.refresh_by_material_no(
             machine_material_no,

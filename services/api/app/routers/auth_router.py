@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import contextlib
+import ipaddress
+
 from fastapi import APIRouter, Cookie, Depends, Request, Response, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -24,14 +27,10 @@ from app.repository.user_session_repo import UserSessionRepo
 from app.schemas.auth_schemas import AuthLoginRequest, AuthSessionInfoResponse
 from app.services.user_auth_service import serialize_user_payload, verify_password
 
-import ipaddress
-
 _trusted_networks: list[ipaddress.IPv4Network | ipaddress.IPv6Network] = []
 for cidr in settings.trusted_proxy_cidrs:
-    try:
+    with contextlib.suppress(ValueError):
         _trusted_networks.append(ipaddress.ip_network(cidr, strict=False))
-    except ValueError:
-        pass
 
 
 def _is_trusted_proxy(ip: str) -> bool:
@@ -52,6 +51,7 @@ def _get_real_ip(request):
     if forwarded:
         return forwarded.split(",")[0].strip()
     return direct_ip
+
 
 limiter = Limiter(key_func=_get_real_ip)
 router = APIRouter(prefix="/api/auth", tags=["用户认证"])

@@ -193,9 +193,7 @@ async def test_sync_bom_with_order_line_ids_uses_batch_lookup(app_client, monkey
     assert body["data"]["job_id"] == 303
     assert captured_ids == [11, 12]
     assert service.last_create_job_kwargs["operator_name"] == "系统管理员"
-    assert service.bom_dispatches == [
-        [("MAT-BATCH-001", "1100"), ("MAT-BATCH-002", "1000")]
-    ]
+    assert service.bom_dispatches == [[("MAT-BATCH-001", "1100"), ("MAT-BATCH-002", "1000")]]
 
 
 @pytest.mark.asyncio
@@ -241,53 +239,55 @@ async def test_delete_sync_log_not_found_returns_not_found_code(app_client):
 
 @pytest.mark.asyncio
 async def test_get_sync_observability_summary(app_client, db_session):
-    db_session.add_all([
-        OrderScheduleSnapshot(order_line_id=1, schedule_status="missing_bom", drawing_released=True),
-        OrderScheduleSnapshot(order_line_id=2, schedule_status="pending_drawing", drawing_released=False),
-        BomBackfillQueue(
-            material_no="MAT-Q-001",
-            plant="1100",
-            source="sales_plan_sync",
-            trigger_reason="sales_plan_or_drawing_updated",
-            status=BomBackfillQueueStatus.PENDING.value,
-        ),
-        BomBackfillQueue(
-            material_no="MAT-Q-002",
-            plant="1100",
-            source="sales_plan_sync",
-            trigger_reason="sales_plan_or_drawing_updated",
-            status=BomBackfillQueueStatus.RETRY_WAIT.value,
-            failure_kind="transient_error",
-            fail_count=2,
-        ),
-        BomRelationSrc(machine_material_no="MAT-001", bom_component_no="COMP-1"),
-        BomRelationSrc(machine_material_no="MAT-002", bom_component_no="COMP-2"),
-        DataIssueRecord(
-            issue_type="BOM缺失",
-            issue_title="缺少BOM",
-            status="open",
-            source_system="scheduler",
-            biz_key="1",
-        ),
-        SyncJobLog(
-            job_type="sales_plan",
-            source_system="guandata",
-            start_time=datetime.now(),
-            status="completed",
-            success_count=12,
-            fail_count=0,
-            message="销售计划同步完成：成功 12 条，失败 0 条，发图状态回填 3 条，自动补 BOM 候选 5 个。",
-        ),
-        SyncJobLog(
-            job_type="bom",
-            source_system="sap",
-            start_time=datetime.now(),
-            status="running",
-            success_count=10,
-            fail_count=1,
-            message="自动补齐 BOM 执行中：第 2/4 批；本轮处理 20 个；已成功 10 条；已失败 1 条；待后续继续 60 个。",
-        ),
-    ])
+    db_session.add_all(
+        [
+            OrderScheduleSnapshot(order_line_id=1, schedule_status="missing_bom", drawing_released=True),
+            OrderScheduleSnapshot(order_line_id=2, schedule_status="pending_drawing", drawing_released=False),
+            BomBackfillQueue(
+                material_no="MAT-Q-001",
+                plant="1100",
+                source="sales_plan_sync",
+                trigger_reason="sales_plan_or_drawing_updated",
+                status=BomBackfillQueueStatus.PENDING.value,
+            ),
+            BomBackfillQueue(
+                material_no="MAT-Q-002",
+                plant="1100",
+                source="sales_plan_sync",
+                trigger_reason="sales_plan_or_drawing_updated",
+                status=BomBackfillQueueStatus.RETRY_WAIT.value,
+                failure_kind="transient_error",
+                fail_count=2,
+            ),
+            BomRelationSrc(machine_material_no="MAT-001", bom_component_no="COMP-1"),
+            BomRelationSrc(machine_material_no="MAT-002", bom_component_no="COMP-2"),
+            DataIssueRecord(
+                issue_type="BOM缺失",
+                issue_title="缺少BOM",
+                status="open",
+                source_system="scheduler",
+                biz_key="1",
+            ),
+            SyncJobLog(
+                job_type="sales_plan",
+                source_system="guandata",
+                start_time=datetime.now(),
+                status="completed",
+                success_count=12,
+                fail_count=0,
+                message="销售计划同步完成：成功 12 条，失败 0 条，发图状态回填 3 条，自动补 BOM 候选 5 个。",
+            ),
+            SyncJobLog(
+                job_type="bom",
+                source_system="sap",
+                start_time=datetime.now(),
+                status="running",
+                success_count=10,
+                fail_count=1,
+                message="自动补齐 BOM 执行中：第 2/4 批；本轮处理 20 个；已成功 10 条；已失败 1 条；待后续继续 60 个。",
+            ),
+        ]
+    )
     await db_session.commit()
 
     resp = await app_client.get("/api/admin/sync/observability")
@@ -335,7 +335,9 @@ async def test_get_sync_observability_summary_uses_aggregated_queue_stats(app_cl
     async def fail_list_recent_failed(self, limit: int = 5):
         raise AssertionError("list_recent_failed should not be used by observability summary")
 
-    monkeypatch.setattr("app.repository.bom_backfill_queue_repo.BomBackfillQueueRepo.count_by_status", fail_count_by_status)
+    monkeypatch.setattr(
+        "app.repository.bom_backfill_queue_repo.BomBackfillQueueRepo.count_by_status", fail_count_by_status
+    )
     monkeypatch.setattr(
         "app.repository.bom_backfill_queue_repo.BomBackfillQueueRepo.count_retry_wait_due",
         fail_count_retry_wait_due,
@@ -431,38 +433,35 @@ async def test_get_sync_log_returns_structured_progress(app_client, db_session):
 
 @pytest.mark.asyncio
 async def test_list_sync_logs_supports_sort_by_message(app_client, db_session):
-    db_session.add_all([
-        SyncJobLog(
-            job_type="sales_plan",
-            source_system="guandata",
-            start_time=datetime(2026, 3, 21, 9, 0, 0),
-            status="completed",
-            success_count=1,
-            fail_count=0,
-            message="zeta message",
-        ),
-        SyncJobLog(
-            job_type="sales_plan",
-            source_system="guandata",
-            start_time=datetime(2026, 3, 21, 10, 0, 0),
-            status="completed",
-            success_count=1,
-            fail_count=0,
-            message="alpha message",
-        ),
-    ])
+    db_session.add_all(
+        [
+            SyncJobLog(
+                job_type="sales_plan",
+                source_system="guandata",
+                start_time=datetime(2026, 3, 21, 9, 0, 0),
+                status="completed",
+                success_count=1,
+                fail_count=0,
+                message="zeta message",
+            ),
+            SyncJobLog(
+                job_type="sales_plan",
+                source_system="guandata",
+                start_time=datetime(2026, 3, 21, 10, 0, 0),
+                status="completed",
+                success_count=1,
+                fail_count=0,
+                message="alpha message",
+            ),
+        ]
+    )
     await db_session.commit()
 
-    resp = await app_client.get(
-        "/api/admin/sync-logs?sort_field=message&sort_order=asc&page_size=20"
-    )
+    resp = await app_client.get("/api/admin/sync-logs?sort_field=message&sort_order=asc&page_size=20")
     body = resp.json()
 
     assert body["code"] == 0
-    items = [
-        item for item in body["data"]["items"]
-        if item["message"] in {"alpha message", "zeta message"}
-    ]
+    items = [item for item in body["data"]["items"] if item["message"] in {"alpha message", "zeta message"}]
     assert [item["message"] for item in items] == ["alpha message", "zeta message"]
 
 

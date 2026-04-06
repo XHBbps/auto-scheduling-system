@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from collections.abc import Sequence
 from typing import Any
@@ -113,10 +113,7 @@ class PartCycleBaselineRepo(BaseRepository[PartCycleBaseline]):
             )
         )
         rows = (await self.session.execute(stmt)).scalars().all()
-        return {
-            self._scope_key(row.material_no, row.machine_model, row.plant): row
-            for row in rows
-        }
+        return {self._scope_key(row.material_no, row.machine_model, row.plant): row for row in rows}
 
     async def list_active_history(self) -> Sequence[PartCycleBaseline]:
         stmt = (
@@ -138,11 +135,7 @@ class PartCycleBaselineRepo(BaseRepository[PartCycleBaseline]):
         target_ids = [int(item) for item in ids if item is not None]
         if not target_ids:
             return 0
-        stmt = (
-            update(PartCycleBaseline)
-            .where(PartCycleBaseline.id.in_(target_ids))
-            .values(is_active=False)
-        )
+        stmt = update(PartCycleBaseline).where(PartCycleBaseline.id.in_(target_ids)).values(is_active=False)
         result = await self.session.execute(stmt)
         return int(result.rowcount or 0)
 

@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
@@ -25,12 +25,8 @@ class OrderScheduleSnapshotAggregateHelper:
                 literal(None).cast(Integer).label("year_part"),
                 literal(None).cast(Integer).label("month_part"),
                 func.count(OrderScheduleSnapshot.id).label("item_count"),
-                func.sum(
-                    case((OrderScheduleSnapshot.schedule_status == "scheduled", 1), else_=0)
-                ).label("metric_one"),
-                func.sum(
-                    case((OrderScheduleSnapshot.warning_level == "abnormal", 1), else_=0)
-                ).label("metric_two"),
+                func.sum(case((OrderScheduleSnapshot.schedule_status == "scheduled", 1), else_=0)).label("metric_one"),
+                func.sum(case((OrderScheduleSnapshot.warning_level == "abnormal", 1), else_=0)).label("metric_two"),
             ),
             select(
                 literal("status").label("bucket"),
@@ -142,11 +138,7 @@ class OrderScheduleSnapshotAggregateHelper:
         return oldest, latest
 
     async def get_observability_aggregates(self) -> dict[str, Any]:
-        known_order_count = (
-            select(func.count())
-            .select_from(self.known_order_line_ids_subquery())
-            .scalar_subquery()
-        )
+        known_order_count = select(func.count()).select_from(self.known_order_line_ids_subquery()).scalar_subquery()
         aggregate_stmt = select(
             known_order_count.label("known_order_count"),
             func.count().label("total_snapshots"),
@@ -210,12 +202,10 @@ class OrderScheduleSnapshotAggregateHelper:
 
     @staticmethod
     def known_order_line_ids_subquery():
-        sales_stmt = (
-            select(SalesPlanOrderLineSrc.id.label("order_line_id"))
-            .where(SalesPlanOrderLineSrc.id.is_not(None))
+        sales_stmt = select(SalesPlanOrderLineSrc.id.label("order_line_id")).where(
+            SalesPlanOrderLineSrc.id.is_not(None)
         )
-        machine_stmt = (
-            select(MachineScheduleResult.order_line_id.label("order_line_id"))
-            .where(MachineScheduleResult.order_line_id.is_not(None))
+        machine_stmt = select(MachineScheduleResult.order_line_id.label("order_line_id")).where(
+            MachineScheduleResult.order_line_id.is_not(None)
         )
         return sales_stmt.union(machine_stmt).subquery()

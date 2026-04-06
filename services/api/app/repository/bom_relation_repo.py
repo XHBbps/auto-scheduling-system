@@ -1,5 +1,6 @@
-from typing import Sequence
-from sqlalchemy import select, delete, and_, func, literal
+from collections.abc import Sequence
+
+from sqlalchemy import and_, delete, func, literal, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.plant_utils import normalize_plant
@@ -34,7 +35,9 @@ class BomRelationRepo(BaseRepository[BomRelationSrc]):
         result = await self.session.execute(stmt)
         return result.scalars().all()
 
-    async def find_direct_children(self, machine_material_no: str, plant: str | None = None) -> Sequence[BomRelationSrc]:
+    async def find_direct_children(
+        self, machine_material_no: str, plant: str | None = None
+    ) -> Sequence[BomRelationSrc]:
         conditions = [
             BomRelationSrc.machine_material_no == machine_material_no,
             BomRelationSrc.material_no == machine_material_no,
@@ -60,9 +63,13 @@ class BomRelationRepo(BaseRepository[BomRelationSrc]):
         ]
         if plant is not None:
             conditions.append(self._normalized_plant_expr() == normalize_plant(plant))
-        stmt = select(BomRelationSrc).where(and_(*conditions)).order_by(
-            BomRelationSrc.material_no.asc(),
-            BomRelationSrc.bom_component_no.asc(),
+        stmt = (
+            select(BomRelationSrc)
+            .where(and_(*conditions))
+            .order_by(
+                BomRelationSrc.material_no.asc(),
+                BomRelationSrc.bom_component_no.asc(),
+            )
         )
         result = await self.session.execute(stmt)
         return result.scalars().all()

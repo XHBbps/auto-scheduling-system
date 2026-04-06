@@ -1,6 +1,3 @@
-
-from typing import Optional
-
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import and_, distinct, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,9 +11,9 @@ from app.schemas.common import PageResult
 from app.schemas.schedule_schemas import (
     DashboardOverviewResponse,
     IssueItem,
-    ScheduleDetailResponse,
     PartScheduleItem,
     PartScheduleListItem,
+    ScheduleDetailResponse,
     ScheduleListItem,
 )
 from app.services.schedule_query_service import ScheduleQueryService
@@ -68,12 +65,10 @@ async def get_dashboard_overview(
         delivery_trends=result["delivery_trends"],
         business_group_summary=result["business_group_summary"],
         abnormal_machine_orders=[
-            ScheduleListItem.model_validate(item).model_dump()
-            for item in result["abnormal_machine_orders"]
+            ScheduleListItem.model_validate(item).model_dump() for item in result["abnormal_machine_orders"]
         ],
         delivery_risk_orders=[
-            ScheduleListItem.model_validate(item).model_dump()
-            for item in result["delivery_risk_orders"]
+            ScheduleListItem.model_validate(item).model_dump() for item in result["delivery_risk_orders"]
         ],
     ).model_dump()
     return ApiResponse.ok(data=payload)
@@ -88,20 +83,20 @@ async def get_dashboard_overview(
 async def list_schedules(
     page_no: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    contract_no: Optional[str] = None,
-    customer_name: Optional[str] = None,
-    product_series: Optional[str] = None,
-    product_model: Optional[str] = None,
-    plant: Optional[str] = None,
-    order_no: Optional[str] = None,
-    schedule_status: Optional[str] = None,
-    schedule_bucket: Optional[str] = Query(None, pattern="^(unscheduled|risk)$"),
-    warning_level: Optional[str] = None,
-    drawing_released: Optional[bool] = None,
-    date_from: Optional[str] = None,
-    date_to: Optional[str] = None,
-    sort_field: Optional[str] = None,
-    sort_order: Optional[str] = None,
+    contract_no: str | None = None,
+    customer_name: str | None = None,
+    product_series: str | None = None,
+    product_model: str | None = None,
+    plant: str | None = None,
+    order_no: str | None = None,
+    schedule_status: str | None = None,
+    schedule_bucket: str | None = Query(None, pattern="^(unscheduled|risk)$"),
+    warning_level: str | None = None,
+    drawing_released: bool | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    sort_field: str | None = None,
+    sort_order: str | None = None,
     session: AsyncSession = Depends(get_session),
     _: object = Depends(require_schedule_view_permission),
 ):
@@ -137,19 +132,19 @@ async def list_schedules(
 async def list_part_schedules(
     page_no: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
-    order_line_id: Optional[int] = None,
-    contract_no: Optional[str] = None,
-    order_no: Optional[str] = None,
-    plant: Optional[str] = None,
-    assembly_name: Optional[str] = None,
-    part_material_no: Optional[str] = None,
-    key_part_name: Optional[str] = None,
-    key_part_material_no: Optional[str] = None,
-    warning_level: Optional[str] = None,
-    date_from: Optional[str] = None,
-    date_to: Optional[str] = None,
-    sort_field: Optional[str] = None,
-    sort_order: Optional[str] = None,
+    order_line_id: int | None = None,
+    contract_no: str | None = None,
+    order_no: str | None = None,
+    plant: str | None = None,
+    assembly_name: str | None = None,
+    part_material_no: str | None = None,
+    key_part_name: str | None = None,
+    key_part_material_no: str | None = None,
+    warning_level: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    sort_field: str | None = None,
+    sort_order: str | None = None,
     session: AsyncSession = Depends(get_session),
     _: object = Depends(require_schedule_view_permission),
 ):
@@ -220,8 +215,10 @@ async def get_schedule_detail(
     detail = await service.get_detail(order_line_id)
     if not detail:
         raise BizException(ErrorCode.NOT_FOUND, f"未找到对应的排产订单: {order_line_id}")
-    return ApiResponse.ok(data={
-        "machine_schedule": ScheduleListItem.model_validate(detail["machine_schedule"]).model_dump(),
-        "part_schedules": [PartScheduleItem.model_validate(item).model_dump() for item in detail["part_schedules"]],
-        "issues": [IssueItem.model_validate(item).model_dump() for item in detail["issues"]],
-    })
+    return ApiResponse.ok(
+        data={
+            "machine_schedule": ScheduleListItem.model_validate(detail["machine_schedule"]).model_dump(),
+            "part_schedules": [PartScheduleItem.model_validate(item).model_dump() for item in detail["part_schedules"]],
+            "issues": [IssueItem.model_validate(item).model_dump() for item in detail["issues"]],
+        }
+    )

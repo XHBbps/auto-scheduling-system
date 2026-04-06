@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     bom_backfill_empty_result_retry_minutes: int = 180
     sync_job_timeout_seconds: int = 7200
     sync_job_heartbeat_interval_seconds: int = 30
-    sync_task_default_max_attempts: int = 1
+    sync_task_default_max_attempts: int = 3
     sync_task_retry_backoff_seconds: float = 10.0
     sync_task_worker_poll_interval_seconds: float = 2.0
     sync_task_worker_batch_size: int = 4

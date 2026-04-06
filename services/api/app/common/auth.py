@@ -1,16 +1,15 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
 import hashlib
 import secrets
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import APIKeyCookie
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.datetime_utils import utc_now
-
 from app.config import settings
 from app.database import get_session
 from app.repository.user_session_repo import UserSessionRepo
@@ -22,8 +21,7 @@ auth_session_cookie_scheme = APIKeyCookie(
     name=settings.user_session_cookie_name,
     scheme_name=AUTH_SESSION_SECURITY_SCHEME_NAME,
     description=(
-        f"用户登录成功后写入浏览器的会话 Cookie。"
-        f"调用受保护接口时请携带 `{settings.user_session_cookie_name}`。"
+        f"用户登录成功后写入浏览器的会话 Cookie。调用受保护接口时请携带 `{settings.user_session_cookie_name}`。"
     ),
     auto_error=False,
 )
@@ -56,14 +54,12 @@ class CurrentUserIdentity:
         return self.is_admin or normalized in self.permission_codes
 
 
-
-
 def ensure_utc_datetime(value: datetime | None) -> datetime | None:
     if value is None:
         return None
     if value.tzinfo is None:
-        return value.replace(tzinfo=timezone.utc)
-    return value.astimezone(timezone.utc)
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
 
 
 def serialize_auth_datetime(value: datetime | None) -> str | None:
@@ -170,8 +166,8 @@ def require_permission(permission_code: str):
         return identity
 
     dependency.__name__ = f"require_permission_{normalized_permission_code.replace('.', '_')}"
-    setattr(dependency, "__permission_dependency__", True)
-    setattr(dependency, "__required_permission_codes__", (normalized_permission_code,))
+    dependency.__permission_dependency__ = True
+    dependency.__required_permission_codes__ = (normalized_permission_code,)
     return dependency
 
 

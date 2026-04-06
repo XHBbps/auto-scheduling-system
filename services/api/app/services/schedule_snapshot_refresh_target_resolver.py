@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import date, datetime, time, timedelta
-from typing import Sequence
 
 from sqlalchemy import distinct, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -54,21 +54,19 @@ class ScheduleSnapshotRefreshTargetResolver:
     ) -> list[int]:
         if not bom_component_no:
             return []
-        machine_material_subquery = select(
-            distinct(BomRelationSrc.machine_material_no).label("machine_material_no")
-        ).where(
-            BomRelationSrc.bom_component_no == bom_component_no,
-        ).subquery()
+        machine_material_subquery = (
+            select(distinct(BomRelationSrc.machine_material_no).label("machine_material_no"))
+            .where(
+                BomRelationSrc.bom_component_no == bom_component_no,
+            )
+            .subquery()
+        )
 
         sales_stmt = select(SalesPlanOrderLineSrc.id.label("order_line_id")).where(
-            SalesPlanOrderLineSrc.material_no.in_(
-                select(machine_material_subquery.c.machine_material_no)
-            )
+            SalesPlanOrderLineSrc.material_no.in_(select(machine_material_subquery.c.machine_material_no))
         )
         machine_stmt = select(MachineScheduleResult.order_line_id.label("order_line_id")).where(
-            MachineScheduleResult.material_no.in_(
-                select(machine_material_subquery.c.machine_material_no)
-            )
+            MachineScheduleResult.material_no.in_(select(machine_material_subquery.c.machine_material_no))
         )
         if machine_model:
             sales_stmt = sales_stmt.where(SalesPlanOrderLineSrc.product_model == machine_model)
@@ -84,9 +82,7 @@ class ScheduleSnapshotRefreshTargetResolver:
     ) -> list[int]:
         if not part_type:
             return []
-        machine_material_stmt = select(
-            distinct(BomRelationSrc.machine_material_no).label("machine_material_no")
-        ).where(
+        machine_material_stmt = select(distinct(BomRelationSrc.machine_material_no).label("machine_material_no")).where(
             BomRelationSrc.bom_component_desc.is_not(None),
             BomRelationSrc.bom_component_desc.startswith(part_type),
         )
@@ -95,14 +91,10 @@ class ScheduleSnapshotRefreshTargetResolver:
         machine_material_subquery = machine_material_stmt.subquery()
 
         sales_stmt = select(SalesPlanOrderLineSrc.id.label("order_line_id")).where(
-            SalesPlanOrderLineSrc.material_no.in_(
-                select(machine_material_subquery.c.machine_material_no)
-            )
+            SalesPlanOrderLineSrc.material_no.in_(select(machine_material_subquery.c.machine_material_no))
         )
         machine_stmt = select(MachineScheduleResult.order_line_id.label("order_line_id")).where(
-            MachineScheduleResult.material_no.in_(
-                select(machine_material_subquery.c.machine_material_no)
-            )
+            MachineScheduleResult.material_no.in_(select(machine_material_subquery.c.machine_material_no))
         )
         if machine_model:
             sales_stmt = sales_stmt.where(SalesPlanOrderLineSrc.product_model == machine_model)

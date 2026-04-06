@@ -1,5 +1,6 @@
-import pytest
 from decimal import Decimal
+
+import pytest
 
 from app.models.bom_relation import BomRelationSrc
 from app.models.part_cycle_baseline import PartCycleBaseline

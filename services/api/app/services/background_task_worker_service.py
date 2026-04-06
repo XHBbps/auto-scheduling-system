@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import timedelta
 from socket import gethostname
 from time import perf_counter
 from typing import Any
@@ -16,6 +16,7 @@ from app.baseline.part_cycle_baseline_service import PartCycleBaselineService
 from app.common.datetime_utils import utc_now
 from app.common.enums import BackgroundTaskStatus
 from app.common.exceptions import BizException, ErrorCode
+from app.common.metrics import background_task_duration_seconds, background_task_total
 from app.config import settings
 from app.database import async_session_factory
 from app.integration.feishu_client import FeishuClient
@@ -81,10 +82,7 @@ def _build_task_failure_message(
     failure_kind: str,
     exc: Exception,
 ) -> str:
-    return (
-        f"task_id={task_id}; task_type={task_type}; stage={stage}; "
-        f"failure_kind={failure_kind}; error={exc}"
-    )
+    return f"task_id={task_id}; task_type={task_type}; stage={stage}; failure_kind={failure_kind}; error={exc}"
 
 
 class BackgroundTaskWorkerService:
@@ -122,11 +120,7 @@ class BackgroundTaskWorkerService:
             for task in stale_tasks:
                 job = await self._load_job(session, task)
                 stale_worker_id = task.worker_id or "unknown"
-                action = (
-                    "requeue"
-                    if int(task.attempt_count or 0) < int(task.max_attempts or 1)
-                    else "fail"
-                )
+                action = "requeue" if int(task.attempt_count or 0) < int(task.max_attempts or 1) else "fail"
                 note = (
                     "后台任务认领超时已回收："
                     f"task_id={task.id}; task_type={task.task_type}; "
@@ -136,7 +130,10 @@ class BackgroundTaskWorkerService:
                 )
                 if int(task.attempt_count or 0) < int(task.max_attempts or 1):
                     task.status = BackgroundTaskStatus.PENDING.value
-                    task.available_at = utc_now()
+                    # Add cooldown before re-availability to prevent concurrent
+                    # execution if the original task is still finishing up.
+                    cooldown = max(settings.sync_task_retry_backoff_seconds, 10)
+                    task.available_at = utc_now() + timedelta(seconds=cooldown)
                     task.claimed_at = None
                     task.started_at = None
                     task.worker_id = None
@@ -175,8 +172,22 @@ class BackgroundTaskWorkerService:
                 await session.commit()
             return tasks
 
+    async def _verify_task_ownership(self, task_id: int) -> bool:
+        """Check that this task is still RUNNING and assigned to the current worker.
+
+        Guards against the race where a task is recovered and reassigned
+        between claim and execution start.
+        """
+        async with self.session_factory() as session:
+            task = await session.get(BackgroundTask, task_id)
+            if task is None or task.status != BackgroundTaskStatus.RUNNING.value:
+                return False
+            # If worker_id doesn't match, another worker took over.
+            return task.worker_id is None or task.worker_id == self.worker_id
+
     async def execute_task(self, task_id: int) -> None:
         heartbeat_task: asyncio.Task | None = None
+        heartbeat_lost = asyncio.Event()
         task_context: BackgroundTaskExecutionContext | None = None
         started_perf = perf_counter()
         try:
@@ -185,7 +196,15 @@ class BackgroundTaskWorkerService:
                 logger.warning("Background task execution skipped: task_id=%s reason=task_not_running", task_id)
                 return
             await self._mark_task_started(task_id)
-            heartbeat_task = asyncio.create_task(self._heartbeat_loop(task_id))
+            # Verify ownership before starting execution to guard against
+            # the task being recovered and reassigned between claim and start.
+            if not await self._verify_task_ownership(task_id):
+                logger.warning(
+                    "Background task execution aborted: task_id=%s reason=ownership_lost",
+                    task_id,
+                )
+                return
+            heartbeat_task = asyncio.create_task(self._heartbeat_loop(task_id, heartbeat_lost))
             logger.info(
                 "Background task execution started: task_id=%s task_type=%s sync_job_log_id=%s worker_id=%s",
                 task_context.task_id,
@@ -195,6 +214,10 @@ class BackgroundTaskWorkerService:
             )
             await self._execute_by_type(task_context)
             await self._mark_task_succeeded(task_id)
+            background_task_total.labels(task_type=task_context.task_type, status="succeeded").inc()
+            background_task_duration_seconds.labels(task_type=task_context.task_type).observe(
+                perf_counter() - started_perf
+            )
             logger.info(
                 "Background task execution succeeded: task_id=%s task_type=%s sync_job_log_id=%s duration_ms=%s",
                 task_context.task_id,
@@ -213,6 +236,8 @@ class BackgroundTaskWorkerService:
                 failure_kind=failure_kind,
                 exc=exc,
             )
+            background_task_total.labels(task_type=task_type, status="failed").inc()
+            background_task_duration_seconds.labels(task_type=task_type).observe(perf_counter() - started_perf)
             logger.exception(
                 "Background task execution failed: task_id=%s task_type=%s sync_job_log_id=%s failure_kind=%s duration_ms=%s",
                 task_id,
@@ -257,7 +282,7 @@ class BackgroundTaskWorkerService:
                     await finish_sync_job(session, job, result, message)
             await session.commit()
 
-    async def _heartbeat_loop(self, task_id: int) -> None:
+    async def _heartbeat_loop(self, task_id: int, lost_event: asyncio.Event | None = None) -> None:
         interval_seconds = max(int(settings.sync_job_heartbeat_interval_seconds), 1)
         try:
             while True:
@@ -265,6 +290,18 @@ class BackgroundTaskWorkerService:
                 async with self.session_factory() as session:
                     task = await session.get(BackgroundTask, task_id)
                     if task is None or task.status != BackgroundTaskStatus.RUNNING.value:
+                        if lost_event is not None:
+                            lost_event.set()
+                        return
+                    # If task was reassigned to another worker, stop heartbeat.
+                    if task.worker_id != self.worker_id:
+                        logger.warning(
+                            "Heartbeat stopping: task_id=%s reassigned to worker_id=%s",
+                            task_id,
+                            task.worker_id,
+                        )
+                        if lost_event is not None:
+                            lost_event.set()
                         return
                     now = utc_now()
                     task.claimed_at = now
@@ -294,6 +331,7 @@ class BackgroundTaskWorkerService:
                 return
             now = utc_now()
             task.started_at = now
+            task.worker_id = self.worker_id
             job = await self._load_job(session, task)
             if job is not None:
                 job.status = "running"
@@ -354,8 +392,12 @@ class BackgroundTaskWorkerService:
                 success_count=workflow_result.sync_result.success_count,
                 fail_count=workflow_result.sync_result.fail_count,
                 drawing_updated_count=workflow_result.drawing_updated_count,
-                enqueued_items=workflow_result.auto_bom_backfill.enqueued_items if workflow_result.auto_bom_backfill else 0,
-                reactivated_items=workflow_result.auto_bom_backfill.reactivated_items if workflow_result.auto_bom_backfill else 0,
+                enqueued_items=workflow_result.auto_bom_backfill.enqueued_items
+                if workflow_result.auto_bom_backfill
+                else 0,
+                reactivated_items=workflow_result.auto_bom_backfill.reactivated_items
+                if workflow_result.auto_bom_backfill
+                else 0,
             )
         await session.commit()
 
@@ -384,14 +426,17 @@ class BackgroundTaskWorkerService:
         task: BackgroundTaskExecutionContext,
     ) -> None:
         job = await self._load_job(session, task)
-        result = await ProductionOrderSyncService(
+        sync_service = ProductionOrderSyncService(
             session,
             self._build_feishu_client(),
             app_token=settings.feishu_production_app_token,
             table_id=settings.feishu_production_table_id,
-        ).sync(job=job)
+        )
+        result = await sync_service.sync(job=job)
         rebuild_created = False
-        if int(result.insert_count or 0) > 0 or int(result.update_count or 0) > 0:
+        if not sync_service.has_fetch_error and (
+            int(result.insert_count or 0) > 0 or int(result.update_count or 0) > 0
+        ):
             _, _, rebuild_created = await BackgroundTaskDispatchService(session).enqueue(
                 task_type="part_cycle_baseline_rebuild",
                 source="production_order_sync",
@@ -479,7 +524,7 @@ class BackgroundTaskWorkerService:
                 f"scheduled_stale {int(result_payload.get('scheduled_stale', 0) or 0)} 条；"
                 f"删除 {int(result_payload.get('deleted', 0) or 0)} 条。"
             )
-            result = SyncResult(success_count=int(result_payload.get('refreshed', 0) or 0))
+            result = SyncResult(success_count=int(result_payload.get("refreshed", 0) or 0))
             await finish_sync_job(session, job, result, message)
         await session.commit()
 

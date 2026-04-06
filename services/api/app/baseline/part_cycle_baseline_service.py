@@ -1,9 +1,9 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import logging
 from collections import defaultdict
 from datetime import datetime
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 from statistics import median
 from typing import Any
 
@@ -340,4 +340,3 @@ class PartCycleBaselineService:
         for key in cls._empty_refresh_summary():
             merged[key] = int(merged.get(key, 0)) + int(incoming.get(key, 0))
         return merged
-

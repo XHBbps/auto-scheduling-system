@@ -1,7 +1,6 @@
-
 import logging
 
-from sqlalchemy import and_, desc, select, tuple_
+from sqlalchemy import desc, select, tuple_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.machine_cycle_history import MachineCycleHistorySrc
@@ -37,11 +36,7 @@ class DrawingStatusSyncService:
             [order.detail_id for order in orders if order.detail_id]
         )
         pair_matches = await self._load_research_by_order_material_pairs(
-            [
-                (order.order_no, order.material_no)
-                for order in orders
-                if order.order_no and order.material_no
-            ]
+            [(order.order_no, order.material_no) for order in orders if order.order_no and order.material_no]
         )
         updated_ids: list[int] = []
         for order in orders:

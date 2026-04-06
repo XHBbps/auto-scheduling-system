@@ -1,4 +1,3 @@
-
 import logging
 from datetime import date
 from typing import Any
@@ -12,7 +11,6 @@ from app.repository.data_issue_repo import DataIssueRepo
 from app.scheduler.machine_schedule_service import MachineScheduleService
 from app.scheduler.part_schedule_service import PartScheduleService
 from app.scheduler.schedule_check_service import ScheduleCheckService
-from app.services.schedule_snapshot_refresh_service import ScheduleSnapshotRefreshService
 from app.scheduler.schedule_orchestrator_helpers import (
     build_final_assembly_time_default_issue_payload,
     build_machine_cycle_default_issue_payload,
@@ -27,6 +25,7 @@ from app.scheduler.schedule_orchestrator_helpers import (
     mark_machine_schedule_abnormal,
     mark_part_schedule_abnormal,
 )
+from app.services.schedule_snapshot_refresh_service import ScheduleSnapshotRefreshService
 
 logger = logging.getLogger(__name__)
 
@@ -182,17 +181,19 @@ class ScheduleOrchestrator:
             )
 
         part_candidate_count = 0
-        recursive_self_made_parts_map = await self.part_service.key_part_service.list_recursive_self_made_parts_for_assemblies(
-            machine_material_no=order.material_no or "",
-            plant=order.delivery_plant,
-            assemblies=[
-                {
-                    "assembly_name": normalize_assembly_name(bom_row.bom_component_desc or ""),
-                    "bom_component_no": bom_row.bom_component_no,
-                }
-                for bom_row in direct_children
-                if (bom_row.bom_component_no or "") in seen_assembly_components
-            ],
+        recursive_self_made_parts_map = (
+            await self.part_service.key_part_service.list_recursive_self_made_parts_for_assemblies(
+                machine_material_no=order.material_no or "",
+                plant=order.delivery_plant,
+                assemblies=[
+                    {
+                        "assembly_name": normalize_assembly_name(bom_row.bom_component_desc or ""),
+                        "bom_component_no": bom_row.bom_component_no,
+                    }
+                    for bom_row in direct_children
+                    if (bom_row.bom_component_no or "") in seen_assembly_components
+                ],
+            )
         )
         for component_no in assembly_component_nos:
             part_candidate_count += len(recursive_self_made_parts_map.get(component_no, []))
@@ -321,7 +322,6 @@ class ScheduleOrchestrator:
     def _mark_part_schedule_abnormal(part_schedule, flag_keys: list[str]) -> None:
         mark_part_schedule_abnormal(part_schedule, flag_keys)
 
-
     async def _record_missing_bom_issue(self, order_line_id: int) -> None:
         order = await self.session.get(SalesPlanOrderLineSrc, order_line_id)
         if not order:
@@ -385,10 +385,14 @@ class ScheduleOrchestrator:
                 self._mark_machine_schedule_abnormal(machine_schedule, "part_schedule_default")
 
         if assembly_defaults:
-            await self.issue_repo.upsert_open_issue(**build_part_assembly_time_default_issue_payload(machine_schedule, assembly_defaults))
+            await self.issue_repo.upsert_open_issue(
+                **build_part_assembly_time_default_issue_payload(machine_schedule, assembly_defaults)
+            )
 
         if cycle_defaults:
-            await self.issue_repo.upsert_open_issue(**build_part_cycle_default_issue_payload(machine_schedule, cycle_defaults))
+            await self.issue_repo.upsert_open_issue(
+                **build_part_cycle_default_issue_payload(machine_schedule, cycle_defaults)
+            )
 
     async def schedule_batch(self, order_line_ids: list[int]) -> dict[str, Any]:
         scheduled = 0
@@ -407,11 +411,13 @@ class ScheduleOrchestrator:
             except Exception as exc:
                 logger.error("Scheduling failed for order %s: %s", order_line_id, exc, exc_info=True)
                 failed += 1
-                results.append({
-                    "success": False,
-                    "order_line_id": order_line_id,
-                    "reason": "排产执行异常，请查看系统日志",
-                })
+                results.append(
+                    {
+                        "success": False,
+                        "order_line_id": order_line_id,
+                        "reason": "排产执行异常，请查看系统日志",
+                    }
+                )
 
         return {
             "total": len(order_line_ids),

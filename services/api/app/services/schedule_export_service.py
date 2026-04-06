@@ -2,9 +2,10 @@ import csv
 import io
 import logging
 import tempfile
+from collections.abc import Iterable
 from inspect import isawaitable
 from time import perf_counter
-from typing import Any, BinaryIO, Iterable
+from typing import Any, BinaryIO
 
 from openpyxl import Workbook
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -125,7 +126,8 @@ class ExportService:
         return {
             key: value
             for key, value in filters.items()
-            if key in {
+            if key
+            in {
                 "order_line_id",
                 "contract_no",
                 "customer_name",
@@ -259,11 +261,7 @@ class ExportService:
 
     @staticmethod
     def _summarize_filters(filters: dict[str, Any]) -> dict[str, Any]:
-        return {
-            key: value
-            for key, value in filters.items()
-            if value not in (None, "", [], {}, ())
-        }
+        return {key: value for key, value in filters.items() if value not in (None, "", [], {}, ())}
 
     @staticmethod
     def _build_xlsx_buffer(sheet_name: str, headers: list[str], rows: Iterable[list[Any]]) -> BinaryIO:
@@ -395,9 +393,7 @@ class ExportService:
     async def _iter_part_export_rows_async(self, filters: dict[str, Any]):
         sort_field = filters.get("sort_field")
         sort_order = filters.get("sort_order")
-        snapshot_sort_field = (
-            sort_field if sort_field in PartScheduleResultRepo.SNAPSHOT_FIELDS else None
-        )
+        snapshot_sort_field = sort_field if sort_field in PartScheduleResultRepo.SNAPSHOT_FIELDS else None
         part_sort_field, part_sort_order = self._build_part_export_sort(sort_field, sort_order)
         snapshot_sort_order = sort_order if snapshot_sort_field else None
 

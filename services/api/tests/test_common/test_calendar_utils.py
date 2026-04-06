@@ -1,5 +1,6 @@
 from datetime import date, timedelta
-from app.common.calendar_utils import subtract_workdays, add_workdays
+
+from app.common.calendar_utils import add_workdays, subtract_workdays
 
 
 def _make_calendar() -> dict[date, bool]:
@@ -13,7 +14,7 @@ def _make_calendar() -> dict[date, bool]:
     while d < end:
         cal[d] = d.weekday() < 5  # Mon-Fri
         d += timedelta(days=1)
-    cal[date(2026, 4, 5)] = True   # Sunday override: workday
+    cal[date(2026, 4, 5)] = True  # Sunday override: workday
     cal[date(2026, 4, 6)] = False  # Monday override: holiday
     return cal
 

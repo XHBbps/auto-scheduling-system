@@ -17,7 +17,6 @@ from app.models.sales_plan import SalesPlanOrderLineSrc
 from app.models.sync_job_log import SyncJobLog
 from app.repository.bom_backfill_queue_repo import BomBackfillQueueRepo
 from app.sync.bom_sync_service import BomSyncExecutionResult, BomSyncService
-from app.sync.sync_support_utils import SyncResult, finish_sync_job, get_running_sync_job, start_sync_job
 from app.sync.sync_job_message_templates import (
     auto_bom_enqueue_empty_message,
     auto_bom_enqueue_summary_message,
@@ -28,6 +27,7 @@ from app.sync.sync_job_message_templates import (
     queue_consume_running_message,
     queue_consume_started_message,
 )
+from app.sync.sync_support_utils import SyncResult, finish_sync_job, get_running_sync_job, start_sync_job
 
 logger = logging.getLogger(__name__)
 

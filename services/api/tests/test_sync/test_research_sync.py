@@ -1,6 +1,6 @@
+from unittest.mock import AsyncMock
 
 import pytest
-from unittest.mock import AsyncMock
 
 from app.repository.machine_cycle_history_repo import MachineCycleHistoryRepo
 from app.sync.research_data_sync_service import ResearchSyncService

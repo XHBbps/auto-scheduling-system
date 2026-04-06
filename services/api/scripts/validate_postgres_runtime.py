@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timedelta
-
-from app.common.datetime_utils import utc_now
 from uuid import uuid4
 
 from sqlalchemy import delete, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from app.common.datetime_utils import utc_now
 from app.config import settings
 from app.models.background_task import BackgroundTask
 from app.models.order_schedule_snapshot import OrderScheduleSnapshot
@@ -48,9 +46,7 @@ REQUIRED_TRIGRAM_INDEXES = {
 
 
 async def _assert_pg_trgm_installed(session: AsyncSession) -> None:
-    installed = await session.execute(
-        text("SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_trgm')")
-    )
+    installed = await session.execute(text("SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_trgm')"))
     assert installed.scalar_one() is True, "pg_trgm extension is not installed"
 
 
@@ -144,15 +140,14 @@ async def _validate_skip_locked(session_factory: async_sessionmaker[AsyncSession
 
 
 async def _validate_advisory_lock(engine) -> None:
-    async with engine.connect() as conn_1, engine.connect() as conn_2:
-        async with conn_1.begin():
-            await conn_1.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": ADVISORY_LOCK_KEY})
-            async with conn_2.begin():
-                acquired = await conn_2.execute(
-                    text("SELECT pg_try_advisory_xact_lock(:key)"),
-                    {"key": ADVISORY_LOCK_KEY},
-                )
-                assert acquired.scalar_one() is False, "advisory lock should be held by first transaction"
+    async with engine.connect() as conn_1, engine.connect() as conn_2, conn_1.begin():
+        await conn_1.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": ADVISORY_LOCK_KEY})
+        async with conn_2.begin():
+            acquired = await conn_2.execute(
+                text("SELECT pg_try_advisory_xact_lock(:key)"),
+                {"key": ADVISORY_LOCK_KEY},
+            )
+            assert acquired.scalar_one() is False, "advisory lock should be held by first transaction"
 
 
 async def _validate_search_plan(session_factory: async_sessionmaker[AsyncSession]) -> None:

@@ -1,8 +1,9 @@
 import logging
-from typing import Any
 from decimal import Decimal
+from typing import Any
 
 from app.integration.http_client import ExternalHttpClient
+
 logger = logging.getLogger(__name__)
 
 _SAP_FIELD_MAP = {
@@ -31,9 +32,7 @@ class SapBomClient:
         self.base_url = base_url.rstrip("/")
         self.http_client = ExternalHttpClient("sap_bom")
 
-    async def fetch_bom(
-        self, machine_material_no: str, plant: str
-    ) -> list[dict[str, Any]]:
+    async def fetch_bom(self, machine_material_no: str, plant: str) -> list[dict[str, Any]]:
         body = {
             "IS_REQ": {
                 "SNDPRN": "OA",

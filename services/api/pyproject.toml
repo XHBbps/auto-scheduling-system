@@ -15,6 +15,8 @@ dependencies = [
     "apscheduler>=3.10.0",
     "slowapi>=0.1.9",
     "tzdata>=2024.1",
+    "python-json-logger>=3.0.0",
+    "prometheus-client>=0.21.0",
 ]
 
 [project.optional-dependencies]
@@ -24,6 +26,7 @@ dev = [
     "pytest-cov>=5.0.0",
     "aiosqlite>=0.20.0",
     "respx>=0.21.0",
+    "ruff>=0.11.0",
 ]
 
 [tool.setuptools.packages.find]
@@ -36,3 +39,31 @@ build-backend = "setuptools.build_meta"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+src = ["app", "tests", "scripts"]
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "UP",     # pyupgrade
+    "B",      # flake8-bugbear
+    "SIM",    # flake8-simplify
+    "RUF",    # ruff-specific rules
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "B008",   # function call in default arg (FastAPI Depends pattern)
+    "RUF012", # mutable class variable (SQLAlchemy Column pattern)
+    "RUF001", # ambiguous unicode character in string (Chinese fullwidth punctuation is intentional)
+    "RUF002", # ambiguous unicode character in docstring (Chinese text is intentional)
+    "E712",   # comparison to True/False (SQLAlchemy filter requires == True/False)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]

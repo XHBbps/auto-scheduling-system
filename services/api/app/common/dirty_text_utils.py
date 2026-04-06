@@ -90,10 +90,7 @@ def cleanup_issue_detail(value: str | None) -> str | None:
         return normalized
 
     parts = re.split(r"(；|。|、)", normalized)
-    return "".join(
-        part if part in {"；", "。", "、"} else (repair_mojibake_text(part) or part)
-        for part in parts
-    )
+    return "".join(part if part in {"；", "。", "、"} else (repair_mojibake_text(part) or part) for part in parts)
 
 
 def _marker_score(text: str, markers: tuple[str, ...]) -> int:
