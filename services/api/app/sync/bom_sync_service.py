@@ -71,18 +71,25 @@ class BomSyncExecutionResult:
     error_message: str | None = None
 
 
+_TRANSIENT_HTTP_STATUS_CODES = frozenset({408, 429, 500, 502, 503, 504})
+
+
 def classify_bom_sync_exception(exc: Exception) -> tuple[str, str]:
+    """Classify a BOM sync exception as transient (retryable) or permanent.
+
+    Classification is based on exception types, not string matching:
+    - httpx.HTTPStatusError with 408/429/5xx → transient
+    - httpx.TimeoutException, httpx.RequestError → transient
+    - ConnectionError, OSError → transient (network-level failures)
+    - Everything else → permanent
+    """
     if isinstance(exc, httpx.HTTPStatusError):
-        status_code = exc.response.status_code
-        if status_code in {408, 429, 500, 502, 503, 504}:
+        if exc.response.status_code in _TRANSIENT_HTTP_STATUS_CODES:
             return "transient_error", str(exc)
         return "permanent_error", str(exc)
     if isinstance(exc, (httpx.TimeoutException, httpx.RequestError)):
         return "transient_error", str(exc)
-    if isinstance(exc, RuntimeError) and "SAP BOM error" in str(exc):
-        return "permanent_error", str(exc)
-    message = str(exc).lower()
-    if any(keyword in message for keyword in ["timeout", "remoteprotocolerror", "server disconnected"]):
+    if isinstance(exc, (ConnectionError, OSError)):
         return "transient_error", str(exc)
     return "permanent_error", str(exc)
 
