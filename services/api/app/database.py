@@ -16,3 +16,15 @@ async_session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_o
 async def get_session() -> AsyncSession:
     async with async_session_factory() as session:
         yield session
+
+
+async def check_db_health() -> bool:
+    """Execute a lightweight query to verify database connectivity."""
+    from sqlalchemy import text
+
+    try:
+        async with async_session_factory() as session:
+            await session.execute(text("SELECT 1"))
+        return True
+    except Exception:
+        return False

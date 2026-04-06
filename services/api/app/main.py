@@ -122,7 +122,14 @@ async def biz_exception_handler(request: Request, exc: BizException):
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    from app.database import check_db_health
+
+    db_ok = await check_db_health()
+    return {
+        "status": "ok" if db_ok else "degraded",
+        "version": "0.1.0",
+        "db": "ok" if db_ok else "error",
+    }
 
 
 @app.get("/metrics", include_in_schema=False)
