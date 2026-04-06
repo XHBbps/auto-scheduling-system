@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,7 +33,7 @@ async def get_work_calendar(
     month: str | None = Query(None, description="要查询的月份；不传时返回全部工作日历配置，格式 yyyy-MM。"),
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_settings_manage_permission),
-):
+) -> ApiResponse[Any]:
     repo = WorkCalendarRepo(session)
     if month:
         parts = month.split("-")
@@ -63,7 +64,7 @@ async def get_work_calendar_distribution(
     month: str = Query(..., description="要查询排产日历分布的月份，格式 yyyy-MM。"),
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_settings_manage_permission),
-):
+) -> ApiResponse[Any]:
     parts = month.split("-")
     year, m = int(parts[0]), int(parts[1])
     service = ScheduleQueryService(session)
@@ -82,7 +83,7 @@ async def get_work_calendar_day_detail(
     date: str = Query(..., description="要查看排产日历明细的日期，格式 yyyy-MM-dd。"),
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_settings_manage_permission),
-):
+) -> ApiResponse[Any]:
     target_date = datetime.strptime(date, "%Y-%m-%d").date()
     service = ScheduleQueryService(session)
     detail = await service.get_schedule_calendar_day_detail(target_date)
@@ -111,7 +112,7 @@ async def update_work_calendar(
     req: WorkCalendarBatchRequest,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_settings_manage_permission),
-):
+) -> ApiResponse[Any]:
     repo = WorkCalendarRepo(session)
     count = 0
     for item in req.items:

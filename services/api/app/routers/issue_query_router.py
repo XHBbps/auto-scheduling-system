@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import distinct, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,7 +26,7 @@ require_issue_view_permission = require_permission("issue.view")
 async def get_issue_type_options(
     session: AsyncSession = Depends(get_session),
     _: object = Depends(require_issue_view_permission),
-):
+) -> ApiResponse[Any]:
     stmt = (
         select(distinct(DataIssueRecord.issue_type))
         .where(DataIssueRecord.issue_type.isnot(None))
@@ -52,7 +54,7 @@ async def list_issues(
     sort_order: str | None = None,
     session: AsyncSession = Depends(get_session),
     _: object = Depends(require_issue_view_permission),
-):
+) -> ApiResponse[Any]:
     repo = DataIssueRepo(session)
     rows, total = await repo.paginate_with_snapshot(
         page_no=page_no,

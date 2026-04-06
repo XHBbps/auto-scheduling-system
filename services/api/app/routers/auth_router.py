@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import ipaddress
+from typing import Any
 
 from fastapi import APIRouter, Cookie, Depends, Request, Response, status
 from slowapi import Limiter
@@ -103,7 +104,7 @@ async def login(
     payload: AuthLoginRequest,
     response: Response,
     session: AsyncSession = Depends(get_session),
-):
+) -> ApiResponse[Any]:
     username = payload.username.strip()
     password = payload.password
     if not username or not password:
@@ -157,7 +158,7 @@ async def get_session_info(
         description="用户会话 Cookie。",
     ),
     session: AsyncSession = Depends(get_session),
-):
+) -> ApiResponse[Any]:
     identity = await get_current_user_from_cookie(session, auth_session_token)
     if identity is None:
         return ApiResponse.ok(data=_build_session_response(authenticated=False))
@@ -183,7 +184,7 @@ async def logout(
         description="用户会话 Cookie。",
     ),
     session: AsyncSession = Depends(get_session),
-):
+) -> ApiResponse[Any]:
     await revoke_auth_session(session, auth_session_token)
     await session.commit()
     response.delete_cookie(

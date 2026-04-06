@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -53,7 +54,7 @@ async def run_schedule(
     req: ScheduleRunRequest,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_schedule_manage_permission),
-):
+) -> ApiResponse[Any]:
     try:
         order_line_ids = req.order_line_ids
         if not order_line_ids:
@@ -98,7 +99,7 @@ async def run_one_part_schedule(
     req: SingleOrderPartScheduleRunRequest,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_schedule_manage_permission),
-):
+) -> ApiResponse[Any]:
     orchestrator = ScheduleOrchestrator(session)
     validation = await orchestrator.validate_part_schedule_run(req.order_line_id)
     if not validation.get("precheck_passed"):
@@ -182,7 +183,7 @@ async def rebuild_schedule_snapshots(
     window_days: int | None = Query(None, ge=1),
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_schedule_manage_permission),
-):
+) -> ApiResponse[Any]:
     service = ScheduleSnapshotRefreshService(session)
     if window_days:
         result = await service.refresh_future_window(
@@ -208,6 +209,6 @@ async def rebuild_schedule_snapshots(
 async def get_schedule_snapshot_observability(
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_schedule_manage_permission),
-):
+) -> ApiResponse[Any]:
     service = ScheduleSnapshotRefreshService(session)
     return ApiResponse.ok(data=await service.get_observability_summary())

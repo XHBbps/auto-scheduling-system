@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import and_, desc, distinct, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -34,7 +36,7 @@ async def _load_distinct_trimmed_values(
 async def get_sales_plan_org_filter_options(
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_data_source_view_permission),
-):
+) -> ApiResponse[Any]:
     business_groups = await _load_distinct_trimmed_values(session, SalesPlanOrderLineSrc.business_group)
     sales_branch_companies = await _load_distinct_trimmed_values(session, SalesPlanOrderLineSrc.sales_branch_company)
     sales_sub_branches = await _load_distinct_trimmed_values(session, SalesPlanOrderLineSrc.sales_sub_branch)
@@ -68,7 +70,7 @@ async def list_sales_plan_orders(
     sort_order: str | None = None,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_data_source_view_permission),
-):
+) -> ApiResponse[Any]:
     conditions = []
     if contract_no:
         conditions.append(SalesPlanOrderLineSrc.contract_no.ilike(f"%{contract_no}%"))

@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import and_, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,7 +34,7 @@ async def list_production_orders(
     sort_order: str | None = None,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_data_source_view_permission),
-):
+) -> ApiResponse[Any]:
     conditions = []
     if production_order_no:
         conditions.append(ProductionOrderHistorySrc.production_order_no.ilike(f"%{production_order_no}%"))

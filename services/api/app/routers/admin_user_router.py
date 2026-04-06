@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi import APIRouter, Depends, Path, Query, Request
 from fastapi.routing import APIRoute
 from sqlalchemy import delete
@@ -131,7 +133,7 @@ async def list_users(
     page_size: int = Query(default=20, ge=1, le=100, description="每页条数，最大 100"),
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_user_view_permission),
-):
+) -> ApiResponse[Any]:
 
     items, total = await UserAccountRepo(session).list_with_roles(
         keyword=keyword,
@@ -160,7 +162,7 @@ async def get_user(
     user_id: int = Path(description="用户 ID"),
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_user_view_permission),
-):
+) -> ApiResponse[Any]:
     user = await _get_user_or_raise(UserAccountRepo(session), user_id)
     return ApiResponse.ok(data=_serialize_admin_user_item(user))
 
@@ -175,7 +177,7 @@ async def create_user(
     payload: UserCreateRequest,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_user_manage_permission),
-):
+) -> ApiResponse[Any]:
 
     repo = UserAccountRepo(session)
 
@@ -220,7 +222,7 @@ async def update_user(
     user_id: int = Path(description="用户 ID"),
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_user_manage_permission),
-):
+) -> ApiResponse[Any]:
     repo = UserAccountRepo(session)
     user = await _get_user_or_raise(repo, user_id)
 
@@ -251,7 +253,7 @@ async def update_user_status(
     user_id: int = Path(description="用户 ID"),
     session: AsyncSession = Depends(get_session),
     current_user: CurrentUserIdentity = Depends(require_user_manage_permission),
-):
+) -> ApiResponse[Any]:
     repo = UserAccountRepo(session)
     user = await _get_user_or_raise(repo, user_id)
     if current_user.user_id == user.id and not payload.is_active:
@@ -276,7 +278,7 @@ async def reset_user_password(
     user_id: int = Path(description="用户 ID"),
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_user_manage_permission),
-):
+) -> ApiResponse[Any]:
     repo = UserAccountRepo(session)
     user = await _get_user_or_raise(repo, user_id)
 
@@ -300,7 +302,7 @@ async def update_user_roles(
     user_id: int = Path(description="用户 ID"),
     session: AsyncSession = Depends(get_session),
     current_user: CurrentUserIdentity = Depends(require_user_manage_permission),
-):
+) -> ApiResponse[Any]:
     repo = UserAccountRepo(session)
     user = await _get_user_or_raise(repo, user_id)
 
@@ -328,7 +330,7 @@ async def update_user_roles(
 async def list_roles(
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_role_view_permission),
-):
+) -> ApiResponse[Any]:
 
     repo = RoleRepo(session)
     roles = await repo.list_with_permissions(include_inactive=True)
@@ -359,7 +361,7 @@ async def get_role(
     role_id: int = Path(description="角色 ID"),
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_role_view_permission),
-):
+) -> ApiResponse[Any]:
     repo = RoleRepo(session)
     role = await _get_role_or_raise(repo, role_id)
     assigned_user_count = (await repo.count_assigned_users([role.id])).get(role.id, 0)
@@ -383,7 +385,7 @@ async def create_role(
     payload: RoleCreateRequest,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_role_manage_permission),
-):
+) -> ApiResponse[Any]:
 
     repo = RoleRepo(session)
     code = normalize_role_code(payload.code)
@@ -419,7 +421,7 @@ async def update_role(
     role_id: int = Path(description="角色 ID"),
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_role_manage_permission),
-):
+) -> ApiResponse[Any]:
     repo = RoleRepo(session)
     role = await _get_role_or_raise(repo, role_id)
     name = payload.name.strip()
@@ -452,7 +454,7 @@ async def update_role_status(
     role_id: int = Path(description="角色 ID"),
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_role_manage_permission),
-):
+) -> ApiResponse[Any]:
     repo = RoleRepo(session)
     role = await _get_role_or_raise(repo, role_id)
     if role.is_system and not payload.is_active:
@@ -483,7 +485,7 @@ async def update_role_permissions(
     role_id: int = Path(description="角色 ID"),
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_role_manage_permission),
-):
+) -> ApiResponse[Any]:
     repo = RoleRepo(session)
     role = await _get_role_or_raise(repo, role_id)
     if role.is_system:
@@ -518,7 +520,7 @@ async def delete_role(
     role_id: int = Path(description="角色 ID"),
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_role_manage_permission),
-):
+) -> ApiResponse[Any]:
     repo = RoleRepo(session)
     role = await _get_role_or_raise(repo, role_id)
     if role.is_system:
@@ -542,7 +544,7 @@ async def delete_role(
 async def list_permissions(
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_permission_view_permission),
-):
+) -> ApiResponse[Any]:
 
     permissions = await PermissionRepo(session).list_all_ordered()
     return ApiResponse.ok(data={"items": [serialize_permission_payload(permission) for permission in permissions]})
@@ -558,7 +560,7 @@ async def get_permission_linkage(
     request: Request,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_permission_view_permission),
-):
+) -> ApiResponse[Any]:
 
     permissions = await PermissionRepo(session).list_all_ordered()
     route_linkage = _build_permission_route_linkage(request.app)
@@ -585,7 +587,7 @@ async def get_permission_matrix(
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_role_view_permission),
     __: CurrentUserIdentity = Depends(require_permission_view_permission),
-):
+) -> ApiResponse[Any]:
 
     role_repo = RoleRepo(session)
     permission_repo = PermissionRepo(session)
@@ -644,7 +646,7 @@ async def get_role_permissions(
     role_id: int = Path(description="角色 ID"),
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_permission_view_permission),
-):
+) -> ApiResponse[Any]:
     role = await _get_role_or_raise(RoleRepo(session), role_id)
     return ApiResponse.ok(
         data={

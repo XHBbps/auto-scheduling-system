@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,7 +28,7 @@ async def resolve_issue(
     req: IssueActionRequest,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_issue_manage_permission),
-):
+) -> ApiResponse[Any]:
     repo = DataIssueRepo(session)
     issue = await repo.get_by_id(issue_id)
     if not issue:
@@ -49,7 +51,7 @@ async def ignore_issue(
     req: IssueActionRequest,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_issue_manage_permission),
-):
+) -> ApiResponse[Any]:
     repo = DataIssueRepo(session)
     issue = await repo.get_by_id(issue_id)
     if not issue:

@@ -1,4 +1,5 @@
 from decimal import Decimal
+from typing import Any
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import and_, or_, select
@@ -90,7 +91,7 @@ async def list_part_cycle_baselines(
     is_active: bool | None = None,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_settings_manage_permission),
-):
+) -> ApiResponse[Any]:
     stmt = select(PartCycleBaseline)
     conditions = []
     search_part_type = (part_type or material_no or "").strip()
@@ -133,7 +134,7 @@ async def save_part_cycle_baseline(
     req: PartCycleBaselineRequest,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_settings_manage_permission),
-):
+) -> ApiResponse[Any]:
     machine_model = (req.machine_model or "").strip()
     if not machine_model:
         return ApiResponse.fail(code=ErrorCode.BIZ_VALIDATION_FAILED, message="机床型号不能为空")
@@ -196,7 +197,7 @@ async def save_part_cycle_baseline(
 async def rebuild_part_cycle_baselines(
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_settings_manage_permission),
-):
+) -> ApiResponse[Any]:
     job_id, status, created = await ManualSyncTaskService().enqueue_part_cycle_baseline_rebuild(
         session,
         operator_name="system",
@@ -222,7 +223,7 @@ async def delete_part_cycle_baseline(
     record_id: int,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_settings_manage_permission),
-):
+) -> ApiResponse[Any]:
     entity = await session.get(PartCycleBaseline, record_id)
     if not entity:
         return ApiResponse.fail(code=ErrorCode.NOT_FOUND, message="记录不存在")

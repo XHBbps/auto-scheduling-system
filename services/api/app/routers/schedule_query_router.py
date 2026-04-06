@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import and_, distinct, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,7 +34,7 @@ require_schedule_view_permission = require_permission("schedule.view")
 async def get_product_series_options(
     session: AsyncSession = Depends(get_session),
     _: object = Depends(require_schedule_view_permission),
-):
+) -> ApiResponse[Any]:
     service = ScheduleQueryService(session)
     items = await service.list_product_series_options()
     return ApiResponse.ok(data=items)
@@ -47,7 +49,7 @@ async def get_product_series_options(
 async def get_dashboard_overview(
     session: AsyncSession = Depends(get_session),
     _: object = Depends(require_schedule_view_permission),
-):
+) -> ApiResponse[Any]:
     service = ScheduleQueryService(session)
     result = await service.get_dashboard_overview()
     payload = DashboardOverviewResponse(
@@ -99,7 +101,7 @@ async def list_schedules(
     sort_order: str | None = None,
     session: AsyncSession = Depends(get_session),
     _: object = Depends(require_schedule_view_permission),
-):
+) -> ApiResponse[Any]:
     service = ScheduleQueryService(session)
     result = await service.list_schedules(
         page_no=page_no,
@@ -147,7 +149,7 @@ async def list_part_schedules(
     sort_order: str | None = None,
     session: AsyncSession = Depends(get_session),
     _: object = Depends(require_schedule_view_permission),
-):
+) -> ApiResponse[Any]:
     service = ScheduleQueryService(session)
     result = await service.list_part_schedules(
         page_no=page_no,
@@ -179,7 +181,7 @@ async def list_part_schedules(
 async def get_part_schedule_assembly_name_options(
     session: AsyncSession = Depends(get_session),
     _: object = Depends(require_schedule_view_permission),
-):
+) -> ApiResponse[Any]:
     stmt = (
         select(distinct(PartScheduleResult.assembly_name))
         .where(
@@ -210,7 +212,7 @@ async def get_schedule_detail(
     order_line_id: int,
     session: AsyncSession = Depends(get_session),
     _: object = Depends(require_schedule_view_permission),
-):
+) -> ApiResponse[Any]:
     service = ScheduleQueryService(session)
     detail = await service.get_detail(order_line_id)
     if not detail:

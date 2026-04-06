@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import and_, case, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -169,7 +171,7 @@ async def list_bom_relations(
     sort_order: str | None = None,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_data_source_view_permission),
-):
+) -> ApiResponse[Any]:
     conditions = []
     if machine_material_no:
         conditions.append(BomRelationSrc.machine_material_no.ilike(f"%{machine_material_no}%"))
@@ -238,7 +240,7 @@ async def get_bom_tree(
     machine_material_no: str | None = Query(None, description="整机物料号，支持英文逗号、中文逗号、换行分隔多个值。"),
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_data_source_view_permission),
-):
+) -> ApiResponse[Any]:
     machine_material_nos = _parse_machine_material_nos(machine_material_no)
     total = len(machine_material_nos)
     roots = await _build_root_nodes(session, machine_material_nos)
@@ -270,7 +272,7 @@ async def get_bom_tree_children(
     limit: int = Query(100, ge=1, le=500),
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_data_source_view_permission),
-):
+) -> ApiResponse[Any]:
     total_stmt = (
         select(func.count())
         .select_from(BomRelationSrc)

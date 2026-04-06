@@ -1,4 +1,5 @@
 from decimal import Decimal
+from typing import Any
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import and_, func, select
@@ -42,7 +43,7 @@ async def list_machine_cycle_baselines(
     sort_order: str | None = None,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_settings_manage_permission),
-):
+) -> ApiResponse[Any]:
     conditions = []
     if machine_model:
         conditions.append(MachineCycleBaseline.machine_model.ilike(f"%{machine_model}%"))
@@ -113,7 +114,7 @@ async def save_machine_cycle_baseline(
     req: MachineCycleBaselineRequest,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_settings_manage_permission),
-):
+) -> ApiResponse[Any]:
     repo = MachineCycleBaselineRepo(session)
     entity = await repo.upsert_baseline(
         product_series=req.product_series or "",
@@ -144,7 +145,7 @@ async def save_machine_cycle_baseline(
 async def rebuild_machine_cycle_baselines(
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_settings_manage_permission),
-):
+) -> ApiResponse[Any]:
     result = await MachineCycleBaselineService(session).rebuild()
     await ScheduleSnapshotRefreshService(session).rebuild_all_open_snapshots(
         source="admin_machine_cycle",
@@ -164,7 +165,7 @@ async def delete_machine_cycle_baseline(
     record_id: int,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_settings_manage_permission),
-):
+) -> ApiResponse[Any]:
     entity = await session.get(MachineCycleBaseline, record_id)
     if not entity:
         return ApiResponse.fail(code=ErrorCode.NOT_FOUND, message="\u8bb0\u5f55\u4e0d\u5b58\u5728")

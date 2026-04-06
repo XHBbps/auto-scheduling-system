@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
@@ -60,7 +61,7 @@ async def sync_sales_plan(
     req: SyncSalesPlanRequest,
     session: AsyncSession = Depends(get_session),
     admin_identity: CurrentUserIdentity = Depends(require_sync_manage_permission),
-):
+) -> ApiResponse[Any]:
     try:
         filter_window = build_sales_plan_filter_window(
             start_time=req.start_time,
@@ -99,7 +100,7 @@ async def sync_bom(
     req: SyncBomRequest,
     session: AsyncSession = Depends(get_session),
     admin_identity: CurrentUserIdentity = Depends(require_sync_manage_permission),
-):
+) -> ApiResponse[Any]:
     try:
         items: list[tuple[str, str]] = []
         if req.material_no:
@@ -157,7 +158,7 @@ async def sync_bom(
 async def sync_production_orders(
     session: AsyncSession = Depends(get_session),
     admin_identity: CurrentUserIdentity = Depends(require_sync_manage_permission),
-):
+) -> ApiResponse[Any]:
     try:
         manual_sync_service = _get_manual_sync_service()
         job_id, status, created = await manual_sync_service.enqueue_production_orders(
@@ -189,7 +190,7 @@ async def sync_research(
     req: SyncResearchRequest,
     session: AsyncSession = Depends(get_session),
     admin_identity: CurrentUserIdentity = Depends(require_sync_manage_permission),
-):
+) -> ApiResponse[Any]:
     try:
         manual_sync_service = _get_manual_sync_service()
         order_no_filter = req.order_no if req.mode == "by_order_no" else None
@@ -222,7 +223,7 @@ async def sync_research(
 async def get_sync_schedule(
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_sync_manage_permission),
-):
+) -> ApiResponse[Any]:
     service = SyncSchedulerControlService(session)
     return ApiResponse.ok(data=await service.get_status())
 
@@ -237,7 +238,7 @@ async def control_sync_schedule(
     req: SyncScheduleRequest,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_sync_manage_permission),
-):
+) -> ApiResponse[Any]:
     service = SyncSchedulerControlService(session)
     return ApiResponse.ok(data=await service.set_enabled(req.enabled, updated_by="api"))
 
@@ -251,7 +252,7 @@ async def control_sync_schedule(
 async def get_sync_observability(
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_sync_manage_permission),
-):
+) -> ApiResponse[Any]:
     return ApiResponse.ok(data=await SyncJobObservabilityService(session).get_summary())
 
 
@@ -270,7 +271,7 @@ async def list_bom_backfill_queue(
     source: str | None = None,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_sync_manage_permission),
-):
+) -> ApiResponse[Any]:
     repo = BomBackfillQueueRepo(session)
     total, items = await repo.list_page(
         page_no=page_no,
@@ -300,7 +301,7 @@ async def retry_bom_backfill_queue_items(
     req: BomBackfillQueueRetryRequest,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_sync_manage_permission),
-):
+) -> ApiResponse[Any]:
     items = (await session.execute(select(BomBackfillQueue).where(BomBackfillQueue.id.in_(req.ids)))).scalars().all()
     changed = 0
     for item in items:

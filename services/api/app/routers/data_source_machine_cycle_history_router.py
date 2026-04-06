@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import and_, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,7 +34,7 @@ async def list_machine_cycle_history(
     sort_order: str | None = None,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_data_source_view_permission),
-):
+) -> ApiResponse[Any]:
     conditions = []
     if machine_model:
         conditions.append(MachineCycleHistorySrc.machine_model.ilike(f"%{machine_model}%"))

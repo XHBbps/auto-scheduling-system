@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import and_, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,7 +35,7 @@ async def list_sync_logs(
     sort_order: str | None = None,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_sync_log_view_permission),
-):
+) -> ApiResponse[Any]:
     stmt = select(SyncJobLog)
     count_conditions = []
     if job_type:
@@ -95,7 +97,7 @@ async def get_sync_log(
     log_id: int,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_sync_log_view_permission),
-):
+) -> ApiResponse[Any]:
     entity = await session.get(SyncJobLog, log_id)
     if not entity:
         return ApiResponse.fail(code=ErrorCode.NOT_FOUND, message="记录不存在")
@@ -112,7 +114,7 @@ async def delete_sync_log(
     log_id: int,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_permission("sync.manage")),
-):
+) -> ApiResponse[Any]:
     entity = await session.get(SyncJobLog, log_id)
     if not entity:
         return ApiResponse.fail(code=ErrorCode.NOT_FOUND, message="记录不存在")

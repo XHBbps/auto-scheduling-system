@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -47,7 +49,7 @@ async def list_assembly_times(
     assembly_name: str | None = None,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_settings_manage_permission),
-):
+) -> ApiResponse[Any]:
     stmt = select(AssemblyTimeBaseline)
     conditions = []
     if machine_model:
@@ -89,7 +91,7 @@ async def save_assembly_time(
     req: AssemblyTimeRequest,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_settings_manage_permission),
-):
+) -> ApiResponse[Any]:
     repo = AssemblyTimeRepo(session)
     default_service = AssemblyTimeDefaultService(session)
     production_sequence, is_final_assembly = await _resolve_production_sequence(
@@ -142,7 +144,7 @@ async def delete_assembly_time(
     record_id: int,
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_settings_manage_permission),
-):
+) -> ApiResponse[Any]:
     default_service = AssemblyTimeDefaultService(session)
     entity = await session.get(AssemblyTimeBaseline, record_id)
     if not entity:

@@ -48,7 +48,7 @@ async def export_machine_schedules(
     sort_order: str | None = Query(None, pattern="^(asc|desc)$"),
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_export_view_permission),
-):
+) -> StreamingResponse:
     service = ExportService(session)
     buf, filename, media_type = await service.export_machine_schedules(
         export_format=export_format,
@@ -102,7 +102,7 @@ async def export_part_schedules(
     sort_order: str | None = Query(None, pattern="^(asc|desc)$"),
     session: AsyncSession = Depends(get_session),
     _: CurrentUserIdentity = Depends(require_export_view_permission),
-):
+) -> StreamingResponse:
     service = ExportService(session)
     buf, filename, media_type = await service.export_part_schedules(
         export_format=export_format,
