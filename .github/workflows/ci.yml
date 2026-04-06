@@ -27,31 +27,16 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install .[dev]
+        run: pip install -r requirements-dev.lock
 
-      - name: Syntax check
-        run: |
-          python -c "
-          import ast, os, sys
-          errors = []
-          for dirpath, dirnames, filenames in os.walk('app'):
-              dirnames[:] = [d for d in dirnames if d != '__pycache__']
-              for fn in filenames:
-                  if fn.endswith('.py'):
-                      fpath = os.path.join(dirpath, fn)
-                      try:
-                          with open(fpath, 'r', encoding='utf-8-sig') as f:
-                              ast.parse(f.read())
-                      except SyntaxError as e:
-                          errors.append(f'{fpath}: {e}')
-          if errors:
-              for e in errors: print(e)
-              sys.exit(1)
-          print(f'All Python files parse OK')
-          "
+      - name: Lint with ruff
+        run: ruff check app/ tests/ scripts/
+
+      - name: Format check with ruff
+        run: ruff format --check app/ tests/ scripts/
 
       - name: Run tests
-        run: pytest --tb=short --cov=app --cov-report=term-missing -q
+        run: pytest --tb=short --cov=app --cov-report=term-missing --cov-fail-under=60 -q
 
   frontend-check:
     name: Frontend Lint & Test
