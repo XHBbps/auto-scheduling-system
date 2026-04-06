@@ -137,7 +137,13 @@ async def metrics():
     from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
     from starlette.responses import Response as StarletteResponse
 
-    from app.common.metrics import app_info, background_task_pending, db_pool_checked_out, db_pool_size
+    from app.common.metrics import (
+        app_info,
+        background_task_dead_letter,
+        background_task_pending,
+        db_pool_checked_out,
+        db_pool_size,
+    )
 
     app_info.info({"version": "0.1.0", "env": settings.app_env})
 
@@ -157,6 +163,12 @@ async def metrics():
             )
             pending_count = result.scalar() or 0
             background_task_pending.set(pending_count)
+
+            from app.repository.background_task_repo import BackgroundTaskRepo
+
+            repo = BackgroundTaskRepo(session)
+            dead_count = await repo.count_dead_letter()
+            background_task_dead_letter.set(dead_count)
     except Exception:
         pass  # metrics collection should never break the endpoint
 

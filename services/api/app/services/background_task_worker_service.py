@@ -146,6 +146,7 @@ class BackgroundTaskWorkerService:
                 else:
                     task.status = BackgroundTaskStatus.FAILED.value
                     task.finished_at = utc_now()
+                    task.dead_at = utc_now()
                     task.last_error = note
                     if job is not None:
                         result = SyncResult()
@@ -277,6 +278,7 @@ class BackgroundTaskWorkerService:
             else:
                 task.status = BackgroundTaskStatus.FAILED.value
                 task.finished_at = now
+                task.dead_at = now
                 if job is not None:
                     result = SyncResult()
                     result.record_fail()

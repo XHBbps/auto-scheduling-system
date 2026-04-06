@@ -33,6 +33,7 @@ class BackgroundTask(TimestampMixin, Base):
     finished_at: Mapped[datetime | None] = mapped_column(DateTime)
     worker_id: Mapped[str | None] = mapped_column(String(120))
     last_error: Mapped[str | None] = mapped_column(Text)
+    dead_at: Mapped[datetime | None] = mapped_column(DateTime, default=None)
 
     __table_args__ = (
         Index("idx_background_task_status_available", "status", "available_at", "id"),

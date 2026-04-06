@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.datetime_utils import utc_now
@@ -57,3 +57,15 @@ class BackgroundTaskRepo(BaseRepository[BackgroundTask]):
             BackgroundTask.claimed_at <= stale_before,
         )
         return list((await self.session.execute(stmt)).scalars().all())
+
+    async def count_dead_letter(self) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(BackgroundTask)
+            .where(
+                BackgroundTask.status == BackgroundTaskStatus.FAILED.value,
+                BackgroundTask.dead_at.is_not(None),
+            )
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0

@@ -59,6 +59,11 @@ background_task_pending = Gauge(
     "Number of pending background tasks in the queue",
 )
 
+background_task_dead_letter = Gauge(
+    "background_task_dead_letter",
+    "Number of permanently failed (dead letter) background tasks",
+)
+
 app_info = Info(
     "app",
     "Application information",
