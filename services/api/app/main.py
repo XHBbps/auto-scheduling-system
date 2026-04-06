@@ -137,13 +137,28 @@ async def metrics():
     from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
     from starlette.responses import Response as StarletteResponse
 
-    from app.common.metrics import app_info, db_pool_checked_out, db_pool_size
+    from app.common.metrics import app_info, background_task_pending, db_pool_checked_out, db_pool_size
 
     app_info.info({"version": "0.1.0", "env": settings.app_env})
 
     pool = engine.pool
     db_pool_size.set(pool.size())
     db_pool_checked_out.set(pool.checkedout())
+
+    try:
+        from sqlalchemy import func, select
+
+        from app.database import async_session_factory
+        from app.models.background_task import BackgroundTask
+
+        async with async_session_factory() as session:
+            result = await session.execute(
+                select(func.count()).select_from(BackgroundTask).where(BackgroundTask.status == "pending")
+            )
+            pending_count = result.scalar() or 0
+            background_task_pending.set(pending_count)
+    except Exception:
+        pass  # metrics collection should never break the endpoint
 
     return StarletteResponse(
         content=generate_latest(),

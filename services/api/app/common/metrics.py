@@ -54,6 +54,11 @@ db_pool_checked_out = Gauge(
     "Database connections currently checked out",
 )
 
+background_task_pending = Gauge(
+    "background_task_pending",
+    "Number of pending background tasks in the queue",
+)
+
 app_info = Info(
     "app",
     "Application information",
